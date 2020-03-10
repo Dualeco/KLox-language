@@ -45,7 +45,7 @@ printSum(1, 2.34);
 
 nil
 
-class Breakfast {
+class Breakfast : Food {
   cook() {
     print "Eggs a-fryin'!";
   }
