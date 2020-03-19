@@ -1,5 +1,7 @@
-import TokenType.*
-import java.lang.NumberFormatException
+package scanner
+
+import Lox
+import scanner.TokenType.*
 
 
 internal class Scanner(
@@ -28,7 +30,10 @@ internal class Scanner(
     private var start = 0
     private var current = 0
     private var line = 1
+
     private val isAtEnd get() = current >= source.length
+    private val isBeforeEndOfMultilineComment get() = peek() == '*' && peekNext() == '/'
+    private val isBeforeStartOfMultilineComment get()  = peek() == '/' && peekNext() == '*'
 
     fun scanTokens(): List<Token> {
         while (!isAtEnd) { // We are at the beginning of the next lexeme.
@@ -40,32 +45,11 @@ internal class Scanner(
     }
 
     private fun scanToken() {
-        val char = advance()
+        val char = peek()
         when (char) {
-            '(' -> addToken(LEFT_PAREN)
-            ')' -> addToken(RIGHT_PAREN)
-            '{' -> addToken(LEFT_BRACE)
-            '}' -> addToken(RIGHT_BRACE)
-            ':' -> addToken(COLON)
-            ',' -> addToken(COMMA)
-            '.' -> addToken(DOT)
-            '-' -> addToken(MINUS)
-            '+' -> addToken(PLUS)
-            ';' -> addToken(SEMICOLON)
-            '*' -> addToken(STAR)
-            '!' -> addToken(if (peek() == '=') { advance(); BANG_EQUAL } else BANG)
-            '=' -> addToken(if (peek() == '=') { advance(); EQUAL_EQUAL } else EQUAL)
-            '<' -> addToken(if (peek() == '=') { advance(); LESS_EQUAL } else LESS)
-            '>' -> addToken(if (peek() == '=') { advance(); GREATER_EQUAL } else GREATER)
-            '/' -> {
-                if (peek() == '/') { // A comment goes until the end of the line.
-                    while (peek() != '\n' && !isAtEnd) advance()
-                } else {
-                    addToken(SLASH)
-                }
-            }
-            '\n' -> newLine()
-            ' ', '\r', '\t' -> {}
+            '(', ')', '{', '}', ':', ',', '.', '-', '+', ';', '*', ' ', '\n', '\r', '\t' -> consumeSingleCharToken(char)
+            '!', '=', '<', '>' -> consumeBooleanOperators(char)
+            '/' -> consumeSlashOrComment()
             '"' -> consumeString()?.let { addToken(STRING, it) }
             else -> {
                 when {
@@ -74,6 +58,78 @@ internal class Scanner(
                     else -> Lox.error(line, "Unexpected character")
                 }
             }
+        }
+    }
+
+    private fun consumeBooleanOperators(char: Char) = when(char) {
+        '!' -> if (peekNext() == '=') BANG_EQUAL else BANG
+        '=' -> if (peekNext() == '=') EQUAL_EQUAL else EQUAL
+        '<' -> if (peekNext() == '=') LESS_EQUAL else LESS
+        '>' -> if (peekNext() == '=') GREATER_EQUAL else GREATER
+        else -> null
+    }?.let {
+        when(it) {
+            BANG_EQUAL, EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL -> advanceTwice()
+            BANG, EQUAL, LESS, GREATER -> advance()
+        }
+        addToken(it)
+    }
+
+    private fun consumeSlashOrComment() = when(peekNext()) {
+        '/' -> consumeSingleLineComment()
+        '*' -> consumeMultilineComment()
+        else -> consumeSingleCharToken('/')
+    }
+
+    private fun consumeSingleCharToken(char: Char) = when(char) {
+        '/' -> SLASH
+        '(' -> LEFT_PAREN
+        ')' -> RIGHT_PAREN
+        '{' -> LEFT_BRACE
+        '}' -> RIGHT_BRACE
+        ':' -> COLON
+        ',' -> COMMA
+        '.' -> DOT
+        '-' -> MINUS
+        '+' -> PLUS
+        ';' -> SEMICOLON
+        '*' -> STAR
+        '\n' -> {
+            newLine()
+            null
+        }
+        ' ', '\r', '\t' -> null
+        else -> null
+    }.also {
+        advance()
+    }?.let {
+        addToken(it)
+    }
+
+    private fun consumeMultilineComment() {
+        advanceTwice()
+
+        while (current + 1 < source.length && !isBeforeEndOfMultilineComment) {
+            if (isBeforeStartOfMultilineComment) {
+                consumeMultilineComment()
+            } else {
+                advance()
+            }
+        }
+
+        if (current + 1 >= source.length) {
+            Lox.error(line, "Unterminated multiline comment.")
+            return
+        } else {
+            advance()
+            advance()
+        }
+    }
+
+    private fun consumeSingleLineComment() {
+        advanceTwice()
+        while (peek() != '\n' && !isAtEnd) {
+            advance()
         }
     }
 
@@ -111,6 +167,11 @@ internal class Scanner(
     }
 
     private fun newLine() = line++
+
+    private fun advanceTwice() {
+        advance()
+        advance()
+    }
 
     private fun advance() = source[current].also {
         current++

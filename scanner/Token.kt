@@ -1,3 +1,5 @@
+package scanner
+
 internal class Token(
     val type: TokenType,
     val lexeme: String,
