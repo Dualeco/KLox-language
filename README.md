@@ -1,6 +1,6 @@
-(Great thanks to [GraydenH](https://github.com/GraydenH) for [Expr.kt](https://github.com/DichotoMe/KLox-language/blob/master/com/dichotome/klox/grammar/Expr.kt) and [Stmt.kt](https://github.com/DichotoMe/KLox-language/blob/master/com/dichotome/klox/grammar/Stmt.kt))
-
 # KLox-language
+
+(Great thanks to [GraydenH](https://github.com/GraydenH) for [Expr.kt](https://github.com/DichotoMe/KLox-language/blob/master/com/dichotome/klox/grammar/Expr.kt) and [Stmt.kt](https://github.com/DichotoMe/KLox-language/blob/master/com/dichotome/klox/grammar/Stmt.kt))
 
 **Syntax in BNF:**
 
