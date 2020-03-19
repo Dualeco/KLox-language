@@ -1,6 +1,6 @@
-package scanner
+package com.dichotome.klox.scanner
 
-internal class Token(
+class Token(
     val type: TokenType,
     val lexeme: String,
     val literal: Any?,

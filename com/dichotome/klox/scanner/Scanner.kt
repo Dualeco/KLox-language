@@ -1,7 +1,7 @@
-package scanner
+package com.dichotome.klox.scanner
 
-import Lox
-import scanner.TokenType.*
+import com.dichotome.klox.Lox
+import com.dichotome.klox.scanner.TokenType.*
 
 
 internal class Scanner(

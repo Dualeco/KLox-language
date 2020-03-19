@@ -1,5 +1,7 @@
-import scanner.Scanner
-import scanner.Token
+package com.dichotome.klox
+
+import com.dichotome.klox.scanner.Scanner
+import com.dichotome.klox.scanner.Token
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.Charset
