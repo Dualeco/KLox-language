@@ -4,9 +4,9 @@ import com.dichotome.klox.scanner.Token
 
 sealed class Stmt {
 
-    internal abstract fun <R> accept(visitor: Visitor<R>): R
+    abstract fun <R> accept(visitor: Visitor<R>): R
 
-    internal interface Visitor<R> {
+    interface Visitor<R> {
         fun visitExpressionStmt(stmt: Expression): R
         fun visitPrintStmt(stmt: Print): R
         fun visitVarStmt(stmt: Var): R
@@ -18,7 +18,7 @@ sealed class Stmt {
         fun visitReturnStmt(stmt: Return): R
     }
 
-    internal class None : Stmt() {
+    class None : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             throw error("Visited non statement.")
     }

@@ -6,11 +6,11 @@ sealed class Expr {
 
     // abstract functions
 
-    internal abstract fun <R> accept(visitor: Visitor<R>): R
+    abstract fun <R> accept(visitor: Visitor<R>): R
 
     // implementing types
 
-    internal interface Visitor<R> {
+    interface Visitor<R> {
         fun visitBinaryExpr(expr: Binary): R
         fun visitGroupingExpr(expr: Grouping): R
         fun visitLiteralExpr(expr: Literal): R
@@ -37,7 +37,7 @@ sealed class Expr {
             visitor.visitGroupingExpr(this)
     }
 
-    class Literal(val value: Any) : Expr() {
+    class Literal(val value: Any?) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitLiteralExpr(this)
     }
