@@ -2,7 +2,8 @@ package com.dichotome.klox
 
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Expr.Literal
-import com.dichotome.klox.grammar.PrefixNotationFactory
+import com.dichotome.klox.grammar.util.PrefixNotationFactory
+import com.dichotome.klox.parser.Parser
 import com.dichotome.klox.scanner.Scanner
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
@@ -45,7 +46,7 @@ object Lox {
 
     fun error(line: Int, message: String) = report(line, "", message)
 
-    private fun report(line: Int, where: String, message: String) {
+    fun report(line: Int, where: String, message: String) {
         System.err.println("[line $line] Error$where: $message")
         hadError = true
     }
@@ -71,9 +72,15 @@ object Lox {
     private fun scan(source: String) {
         val scanner = Scanner(source)
         val tokens: List<Token> = scanner.scanTokens()
-        // For now, just print the tokens.
-        tokens.forEach {
-            println(it)
+
+        val parser = Parser(tokens)
+        val expression: Expr? = parser.parse()
+
+        // Stop if there was a syntax error.
+        if (hadError) return
+
+        expression?.let {
+            println(PrefixNotationFactory.create(expression))
         }
     }
 }

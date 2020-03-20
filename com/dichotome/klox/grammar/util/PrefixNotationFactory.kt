@@ -1,4 +1,6 @@
-package com.dichotome.klox.grammar
+package com.dichotome.klox.grammar.util
+
+import com.dichotome.klox.grammar.Expr
 
 object PrefixNotationFactory : Expr.Visitor<String> {
 
