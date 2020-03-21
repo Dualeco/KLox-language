@@ -73,12 +73,16 @@ class Interpreter : Expr.Visitor<Any> {
         }
     }
 
-    override fun visitCommaExpr(comma: Expr.Comma): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun visitCommaExpr(comma: Expr.Comma): Any =
+        comma.list.map { it.evaluate() }.last()
 
-    override fun visitTernaryExpr(ternary: Expr.Ternary): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitTernaryExpr(ternary: Expr.Ternary): Any = with(ternary) {
+        val condition = first.evaluate()
+        if (condition is Boolean) {
+            if (condition) second.evaluate() else third.evaluate()
+        } else {
+            throw RuntimeError(ternary.operator, "The value before '?' must be Boolean" )
+        }
     }
 
     override fun visitVariableExpr(variable: Expr.Variable): Any {

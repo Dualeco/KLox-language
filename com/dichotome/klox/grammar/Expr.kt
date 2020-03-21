@@ -45,7 +45,7 @@ sealed class Expr {
         override fun toString(): String = list.joinToString(separator = ", ")
     }
 
-    class Ternary(val first: Expr, val second: Expr, val third: Expr) : Expr() {
+    class Ternary(val operator: Token, val first: Expr, val second: Expr, val third: Expr) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitTernaryExpr(this)
 

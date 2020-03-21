@@ -45,13 +45,20 @@ class Parser(
         var expr = equality()
         val second: Expr
         val third: Expr
+        val firstToken = peek()
         if (match(QUESTION)) {
-            second = ternary()
-            if (match(COLON)) {
-                third = ternary()
-                expr = Expr.Ternary(expr, second, third)
-            } else {
-                throw error(peek(), "Incomplete ternary operator: $expr ? $second, ':' branch is missing")
+            try {
+                second = ternary()
+                if (match(COLON)) {
+                    third = ternary()
+                    expr = Expr.Ternary(firstToken, expr, second, third)
+                } else {
+                    throw error(peek(), "Incomplete ternary operator: '$expr ? $second'" +
+                            "\n      Cause: ':' branch is missing")
+                }
+            } catch (e: ParseError) {
+                throw error(previous(), "Incomplete ternary operator: '$expr ?'" +
+                        "\n      Cause '?' and ':' branches are missing")
             }
         }
         return expr
@@ -121,7 +128,7 @@ class Parser(
             }
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
-            else -> throw error(peek() , "Expect expression.")
+            else -> throw error(peek(), "Expect expression.")
         }
 
     private fun checkBinaryOperator(token: Token) =
@@ -197,7 +204,6 @@ class Parser(
             when (peek().type) {
                 CLASS, FUN, VAR, FOR, IF, WHILE, PRINT, RETURN -> return
                 else -> advance()
-
             }
         }
     }
