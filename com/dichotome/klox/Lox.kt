@@ -1,7 +1,9 @@
 package com.dichotome.klox
 
 import com.dichotome.klox.grammar.Expr
+import com.dichotome.klox.grammar.RuntimeError
 import com.dichotome.klox.grammar.util.PrefixNotationFactory
+import com.dichotome.klox.interpreter.Interpreter
 import com.dichotome.klox.parser.Parser
 import com.dichotome.klox.scanner.Scanner
 import com.dichotome.klox.scanner.Token
@@ -14,7 +16,8 @@ import kotlin.system.exitProcess
 
 
 object Lox {
-    var hadError = false
+    private var hadError = false
+    private var hadRuntimeError = false
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -34,6 +37,11 @@ object Lox {
 
     fun error(line: Int, message: String) = report(line, "", message)
 
+    fun runtimeError(error: RuntimeError) {
+        System.err.println("${error.message} \n[line " + error.token.line + "]")
+        hadRuntimeError = true
+    }
+
     fun report(line: Int, where: String, message: String) {
         System.err.println("[line $line] Error$where: $message")
         hadError = true
@@ -44,7 +52,11 @@ object Lox {
         scan(String(bytes, Charset.defaultCharset()))
 
         // Indicate an error in the exit code.
-        if (hadError) exitProcess(65)
+        when {
+            hadError -> exitProcess(65)
+            hadRuntimeError -> exitProcess(70)
+        }
+
     }
 
     private fun runPrompt() {
@@ -60,19 +72,23 @@ object Lox {
     private fun scan(source: String) {
 
         // Scan tokens
-        println("\nScanning: -------------------------------------------------------------------------------------------\n")
+        println("\nScanning: -----------------------------------------------------------------------------------------\n")
         val scanner = Scanner(source)
         val tokens: List<Token> = scanner.scanTokens()
         tokens.forEach { println(it) }
 
         // Parse tokens
-        println("\nParsing: --------------------------------------------------------------------------------------------\n")
+        println("\nParsing: ------------------------------------------------------------------------------------------\n")
         val parser = Parser(tokens)
         val expression: Expr = parser.parse() ?: return
+        println(PrefixNotationFactory.create(expression))
 
         // Stop if there was a syntax error.
         if (hadError) return
 
-        println(PrefixNotationFactory.create(expression))
+        // Parse tokens
+        println("\nInterpret: ----------------------------------------------------------------------------------------\n")
+        val interpreter = Interpreter()
+        println(interpreter.interpret(expression))
     }
 }
