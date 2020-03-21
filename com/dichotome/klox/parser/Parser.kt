@@ -89,7 +89,7 @@ class Parser(
 
     private fun multiplication(): Expr {
         var expr = unary()
-        while (match(SLASH, STAR, HAT, MOD)) {
+        while (match(SLASH, STAR, HAT, MOD, BANG_MOD)) {
             val operator = previous()
             val right = unary()
             expr = Expr.Binary(expr, operator, right)
@@ -139,7 +139,9 @@ class Parser(
             SLASH,
             STAR,
             BANG,
-            MINUS
+            MINUS,
+            MOD,
+            BANG_MOD
         )
 
     private fun match(vararg types: TokenType): Boolean {

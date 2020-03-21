@@ -68,6 +68,7 @@ class Interpreter : Expr.Visitor<Any> {
             STAR -> times(left, right, token)
             HAT -> pow(left, right, token)
             MOD -> mod(left, right, token)
+            BANG_MOD -> antiMod(left, right, token)
 
             else -> Unit
         }
@@ -180,6 +181,13 @@ class Interpreter : Expr.Visitor<Any> {
     private fun mod(left: Any, right: Any, token: Token): Any {
         if (left is Double && right is Double)
             return left % right
+
+        throw RuntimeError(token, "Operands must be two Numbers")
+    }
+
+    private fun antiMod(left: Any, right: Any, token: Token): Any {
+        if (left is Double && right is Double)
+            return left - left % right
 
         throw RuntimeError(token, "Operands must be two Numbers")
     }

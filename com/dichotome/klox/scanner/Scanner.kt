@@ -47,7 +47,7 @@ internal class Scanner(
     private fun scanToken() {
         when (val char = peek()) {
             '(', ')', '{', '}', ':', ',', '.', '-', '+', ';', '*', '?', '^', '%', ' ', '\n', '\r', '\t' -> consumeSingleCharToken(char)
-            '!', '=', '<', '>' -> consumeBooleanOperators(char)
+            '!', '=', '<', '>' -> consumeTwoCharOperators(char)
             '/' -> consumeSlashOrComment()
             '"' -> consumeString()?.let { addToken(STRING, it) }
             else -> {
@@ -60,15 +60,15 @@ internal class Scanner(
         }
     }
 
-    private fun consumeBooleanOperators(char: Char) = when(char) {
-        '!' -> if (peekNext() == '=') BANG_EQUAL else BANG
+    private fun consumeTwoCharOperators(char: Char) = when(char) {
+        '!' -> if (peekNext() == '%') BANG_MOD else if (peekNext() == '=') BANG_EQUAL else BANG
         '=' -> if (peekNext() == '=') EQUAL_EQUAL else EQUAL
         '<' -> if (peekNext() == '=') LESS_EQUAL else LESS
         '>' -> if (peekNext() == '=') GREATER_EQUAL else GREATER
         else -> null
     }?.let {
         when(it) {
-            BANG_EQUAL, EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL -> advanceTwice()
+            BANG_MOD, BANG_EQUAL, EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL -> advanceTwice()
             BANG, EQUAL, LESS, GREATER -> advance()
         }
         addToken(it)
