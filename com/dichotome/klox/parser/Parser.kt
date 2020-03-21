@@ -83,21 +83,21 @@ class Parser(
         return primary()
     }
 
-    private fun primary(): Expr {
-        if (match(FALSE)) return Literal(false)
-        if (match(TRUE)) return Literal(true)
-        if (match(NIL)) return Literal(null)
-        if (match(NUMBER, STRING)) {
-            return Literal(previous().literal)
+    private fun primary(): Expr =
+        when {
+            match(FALSE) -> Literal(false)
+            match(TRUE) -> Literal(true)
+            match(NIL) -> Literal(null)
+            match(NUMBER, STRING) -> {
+                Literal(previous().literal)
+            }
+            match(LEFT_PAREN) -> {
+                val expr = expression()
+                consume(RIGHT_PAREN, "Expect ')' after expression.")
+                Expr.Grouping(expr)
+            }
+            else -> throw error(peek(), "Expect expression.")
         }
-        if (match(LEFT_PAREN)) {
-            val expr = expression()
-            consume(RIGHT_PAREN, "Expect ')' after expression.")
-            return Expr.Grouping(expr)
-        }
-
-        throw error(peek(), "Expect expression.");
-    }
 
     private fun match(vararg types: TokenType): Boolean {
         types.forEach {

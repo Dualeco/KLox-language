@@ -145,10 +145,11 @@ internal class Scanner(
     }
 
     private fun consumeString(): String? {
-        while (peek() != '"' && !isAtEnd) {
+        do {
             if (peek() == '\n') line++
             advance()
-        }
+        } while (peek() != '"' && !isAtEnd)
+
         return if (isAtEnd) { // Unterminated string.
             Lox.error(line, "Unterminated string.")
             null

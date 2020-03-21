@@ -1,12 +1,10 @@
 package com.dichotome.klox
 
 import com.dichotome.klox.grammar.Expr
-import com.dichotome.klox.grammar.Expr.Literal
 import com.dichotome.klox.grammar.util.PrefixNotationFactory
 import com.dichotome.klox.parser.Parser
 import com.dichotome.klox.scanner.Scanner
 import com.dichotome.klox.scanner.Token
-import com.dichotome.klox.scanner.TokenType
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.Charset
@@ -20,17 +18,7 @@ object Lox {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        PrefixNotationFactory.create(
-            Expr.Binary(
-                Expr.Unary(Token(TokenType.MINUS, "-", null, 1), Literal(123)),
-                Token(TokenType.STAR, "*", null, 1),
-                Expr.Grouping(Expr.Binary(Literal(45.67), Token(TokenType.MINUS, "-", null, 1), Literal(43.4)))
-            )
-        ).also {
-            print(it)
-        }
-
-        /*when {
+        when {
             args.size > 1 -> {
                 println("Usage: jlox [script]")
                 exitProcess(64)
@@ -41,7 +29,7 @@ object Lox {
             else -> {
                 runPrompt()
             }
-        }*/
+        }
     }
 
     fun error(line: Int, message: String) = report(line, "", message)
