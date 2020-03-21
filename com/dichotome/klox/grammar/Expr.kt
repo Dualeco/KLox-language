@@ -12,6 +12,7 @@ sealed class Expr {
 
     interface Visitor<R> {
         fun visitBinaryExpr(expr: Binary): R
+        fun visitCommaExpr(expression: Comma): R
         fun visitGroupingExpr(expr: Grouping): R
         fun visitLiteralExpr(expr: Literal): R
         fun visitUnaryExpr(expr: Unary): R
@@ -30,6 +31,11 @@ sealed class Expr {
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBinaryExpr(this)
+    }
+
+    class Comma(val left: Expr, val right: Expr): Expr() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitCommaExpr(this)
     }
 
     class Grouping(val expression: Expr) : Expr() {

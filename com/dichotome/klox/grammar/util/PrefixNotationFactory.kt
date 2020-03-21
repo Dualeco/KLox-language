@@ -15,6 +15,10 @@ object PrefixNotationFactory : Expr.Visitor<String> {
         parenthesize(operator.lexeme, left, right)
     }
 
+    override fun visitCommaExpr(expr: Expr.Comma): String = with(expr) {
+        parenthesize("comma", left, right)
+    }
+
     override fun visitGroupingExpr(expr: Expr.Grouping): String = with(expr) {
         parenthesize("group", expression)
     }

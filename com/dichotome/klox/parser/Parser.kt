@@ -32,23 +32,32 @@ class Parser(
             null
         }
 
-    private fun expression() = equality()
+    private fun expression() = comma()
+
+    private fun comma(): Expr {
+        var expr = equality()
+        while (match(COMMA)) {
+            val right = equality()
+            expr = Expr.Comma(expr, right)
+        }
+        return expr
+    }
 
     private fun equality(): Expr {
-        var expr: Expr = comparison()
+        var expr = comparison()
         while (match(BANG_EQUAL, EQUAL_EQUAL)) {
             val operator = previous()
-            val right: Expr = comparison()
+            val right = comparison()
             expr = Expr.Binary(expr, operator, right)
         }
         return expr
     }
 
     private fun comparison(): Expr {
-        var expr: Expr = addition()
+        var expr = addition()
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             val operator = previous()
-            val right: Expr = addition()
+            val right = addition()
             expr = Expr.Binary(expr, operator, right)
         }
         return expr
@@ -65,10 +74,10 @@ class Parser(
     }
 
     private fun multiplication(): Expr {
-        var expr: Expr = unary()
+        var expr = unary()
         while (match(SLASH, STAR)) {
             val operator = previous()
-            val right: Expr = unary()
+            val right = unary()
             expr = Expr.Binary(expr, operator, right)
         }
         return expr
