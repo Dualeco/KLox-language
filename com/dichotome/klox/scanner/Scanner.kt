@@ -98,7 +98,7 @@ internal class Scanner(
         '?' -> QUESTION
         '\n' -> {
             newLine()
-            null
+            NEW_LINE
         }
         ' ', '\r', '\t' -> null
         else -> null

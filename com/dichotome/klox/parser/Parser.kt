@@ -2,7 +2,8 @@ package com.dichotome.klox.parser
 
 import com.dichotome.klox.Lox
 import com.dichotome.klox.grammar.Expr
-import com.dichotome.klox.grammar.Expr.Literal
+import com.dichotome.klox.grammar.Expr.*
+import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
 import com.dichotome.klox.scanner.TokenType.*
@@ -25,10 +26,56 @@ class Parser(
 
     private var current = 0
 
-    fun parse(): Expr? = try {
-        expression()
-    } catch (error: ParseError) {
-        null
+    fun parse(): List<Stmt> {
+        val statements = arrayListOf<Stmt>()
+        while (!isAtEnd()) {
+            declaration()?.let {
+                statements.add(it)
+            }
+        }
+        return statements
+    }
+
+    private fun varDeclaration(): Stmt {
+        val token = consume(IDENTIFIER, "Expect variable name")
+        var initializer: Expr? = null
+        if (match(EQUAL)) {
+            initializer = expression()
+        }
+        consumeLineEnd()
+
+        return Stmt.Var(token, initializer)
+    }
+
+    private fun declaration(): Stmt? =
+        try {
+            if (match(VAR)) {
+                varDeclaration()
+            } else {
+                statement()
+            }
+        } catch (e: ParseError) {
+            synchronize()
+            null
+        }
+
+    private fun statement(): Stmt =
+        if (match(PRINT)) {
+            printStatement()
+        } else {
+            expressionStatement()
+        }
+
+    private fun printStatement(): Stmt {
+        val expr = expression()
+        consumeLineEnd()
+        return Stmt.Print(expr)
+    }
+
+    private fun expressionStatement(): Stmt {
+        val expr = expression()
+        consumeLineEnd()
+        return Stmt.Expression(expr)
     }
 
     private fun expression(): Expr = comma()
@@ -53,12 +100,14 @@ class Parser(
                     third = ternary()
                     expr = Expr.Ternary(firstToken, expr, second, third)
                 } else {
-                    throw error(peek(), "Incomplete ternary operator: '$expr ? $second'" +
-                            "\n      Cause: ':' branch is missing")
+                    throw error(
+                        peek(), "Incomplete ternary operator: '$expr ? $second'\n      Cause: ':' branch is missing"
+                    )
                 }
             } catch (e: ParseError) {
-                throw error(previous(), "Incomplete ternary operator: '$expr ?'" +
-                        "\n      Cause '?' and ':' branches are missing")
+                throw error(
+                    previous(), "Incomplete ternary operator: '$expr ?'\n      Cause '?' and ':' branches are missing"
+                )
             }
         }
         return expr
@@ -118,13 +167,12 @@ class Parser(
             match(FALSE) -> Literal(false)
             match(TRUE) -> Literal(true)
             match(NIL) -> Literal(null)
-            match(NUMBER, STRING) -> {
-                Literal(previous().literal)
-            }
+            match(NUMBER, STRING) -> Literal(previous().literal)
+            match(IDENTIFIER) -> Variable(previous())
             match(LEFT_PAREN) -> {
                 val expr = expression()
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
-                Expr.Grouping(expr)
+                Grouping(expr)
             }
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
@@ -160,8 +208,15 @@ class Parser(
         return false
     }
 
-    private fun consume(type: TokenType, message: String): Token? {
+    private fun consumeLineEnd(): Token = consume(listOf(NEW_LINE, EOF), "Expect new line after expression")
+
+    private fun consume(type: TokenType, message: String): Token {
         if (check(type)) return advance()
+        throw error(peek(), message)
+    }
+
+    private fun consume(types: List<TokenType>, message: String): Token {
+        if (check(types)) return advance()
         throw error(peek(), message)
     }
 
@@ -173,14 +228,17 @@ class Parser(
         return ParseError()
     }
 
+    private fun check(types: List<TokenType>): Boolean =
+        types.fold(false) { acc, tokenType -> acc || check(tokenType) }
+
     private fun check(type: TokenType): Boolean =
-        if (isAtEnd()) {
+        if (isAtEnd() && type != EOF) {
             false
         } else {
-            peek().type === type
+            peek().type == type
         }
 
-    private fun advance(): Token? {
+    private fun advance(): Token {
         if (!isAtEnd()) current++
         return previous()
     }

@@ -33,7 +33,7 @@ sealed class Stmt {
             visitor.visitPrintStmt(this)
     }
 
-    class Var(val name: Token, val initializer: Expr) : Stmt() {
+    class Var(val name: Token, val initializer: Expr?) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitVarStmt(this)
     }

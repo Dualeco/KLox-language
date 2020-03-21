@@ -1,8 +1,7 @@
 package com.dichotome.klox
 
 import com.dichotome.klox.error.RuntimeError
-import com.dichotome.klox.grammar.Expr
-import com.dichotome.klox.grammar.util.PrefixNotationFactory
+import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
 import com.dichotome.klox.parser.Parser
 import com.dichotome.klox.scanner.Scanner
@@ -71,24 +70,21 @@ object Lox {
     private fun scan(source: String) {
 
         // Scan tokens
-        println("\nScanning: ---------------------------------------------------------------------------------------\n")
-        val scanner = Scanner(source)
-        val tokens: List<Token> = scanner.scanTokens()
-        tokens.forEach { println(it) }
+        //println("\nScanning: ---------------------------------------------------------------------------------------\n")
+        val tokens: List<Token> = Scanner(source).scanTokens()
+        //tokens.forEach { println(it) }
 
         // Parse tokens
-        println("\nParsing: ----------------------------------------------------------------------------------------\n")
-        val parser = Parser(tokens)
-        val expression: Expr = parser.parse() ?: return
-        println(PrefixNotationFactory.create(expression))
+        //println("\nParsing: ----------------------------------------------------------------------------------------\n")
+        val statements: List<Stmt> = Parser(tokens).parse()
+        //println(PrefixNotationFactory.create(expression))
 
         // Stop if there was a syntax error.
         if (hadError) return
 
         // Parse tokens
-        println("\nInterpret: --------------------------------------------------------------------------------------\n")
+        //println("\nInterpret: --------------------------------------------------------------------------------------\n")
         val interpreter = Interpreter()
-        val interpreted = interpreter.interpret(expression)
-        println(interpreted)
+        interpreter.interpret(statements)
     }
 }

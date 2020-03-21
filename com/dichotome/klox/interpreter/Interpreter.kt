@@ -1,15 +1,21 @@
 package com.dichotome.klox.interpreter
 
+import com.dichotome.klox.Lox
 import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
+import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType.*
 import kotlin.math.pow
 
-class Interpreter : Expr.Visitor<Any> {
+class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
-    fun interpret(expr: Expr): String =
-        stringify(expr.evaluate())
+    fun interpret(statements: List<Stmt>) =
+        try {
+            statements.forEach { it.execute() }
+        } catch (e: RuntimeError) {
+            Lox.runtimeError(e)
+        }
 
     private fun stringify(value: Any): String =
         when (value) {
@@ -20,6 +26,8 @@ class Interpreter : Expr.Visitor<Any> {
 
     private fun Expr.evaluate(): Any = accept(this@Interpreter)
 
+    private fun Stmt.execute(): Any = accept(this@Interpreter)
+
     private fun Any.isTruthy(): Boolean = when (this) {
         is Boolean -> this
         Unit -> false
@@ -29,6 +37,8 @@ class Interpreter : Expr.Visitor<Any> {
     }
 
     private fun Any.isNotTruthy(): Boolean = !isTruthy()
+
+    //region EXPR ------------------------------------------------------------------------------------------------------
 
     override fun visitLiteralExpr(literal: Expr.Literal): Any = literal.value ?: Unit
 
@@ -104,6 +114,49 @@ class Interpreter : Expr.Visitor<Any> {
     override fun visitFuncExpr(func: Expr.Func): Any {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
+    //endregion
+
+    //region STMT ------------------------------------------------------------------------------------------------------
+
+    override fun visitExpressionStmt(stmt: Stmt.Expression) {
+        stmt.expression.evaluate()
+    }
+
+    override fun visitPrintStmt(stmt: Stmt.Print) {
+        val value = stmt.expression.evaluate()
+        println(stringify(value))
+    }
+
+    override fun visitVarStmt(stmt: Stmt.Var) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitBlockStmt(stmt: Stmt.Block) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitIfStmt(stmt: Stmt.If) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitWhileStmt(stmt: Stmt.While) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitBreakStmt(stmt: Stmt.Break) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitFunctionStmt(stmt: Stmt.Function) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitReturnStmt(stmt: Stmt.Return) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    //endregion
 
     private fun negate(right: Any, token: Token): Any {
         if (right is Double)
