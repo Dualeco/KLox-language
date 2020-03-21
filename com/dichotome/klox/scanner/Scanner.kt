@@ -45,8 +45,7 @@ internal class Scanner(
     }
 
     private fun scanToken() {
-        val char = peek()
-        when (char) {
+        when (val char = peek()) {
             '(', ')', '{', '}', ':', ',', '.', '-', '+', ';', '*', ' ', '\n', '\r', '\t' -> consumeSingleCharToken(char)
             '!', '=', '<', '>' -> consumeBooleanOperators(char)
             '/' -> consumeSlashOrComment()
