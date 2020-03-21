@@ -1,7 +1,7 @@
 package com.dichotome.klox
 
+import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
-import com.dichotome.klox.grammar.RuntimeError
 import com.dichotome.klox.grammar.util.PrefixNotationFactory
 import com.dichotome.klox.interpreter.Interpreter
 import com.dichotome.klox.parser.Parser
@@ -56,7 +56,6 @@ object Lox {
             hadError -> exitProcess(65)
             hadRuntimeError -> exitProcess(70)
         }
-
     }
 
     private fun runPrompt() {
@@ -72,13 +71,13 @@ object Lox {
     private fun scan(source: String) {
 
         // Scan tokens
-        println("\nScanning: -----------------------------------------------------------------------------------------\n")
+        println("\nScanning: ---------------------------------------------------------------------------------------\n")
         val scanner = Scanner(source)
         val tokens: List<Token> = scanner.scanTokens()
         tokens.forEach { println(it) }
 
         // Parse tokens
-        println("\nParsing: ------------------------------------------------------------------------------------------\n")
+        println("\nParsing: ----------------------------------------------------------------------------------------\n")
         val parser = Parser(tokens)
         val expression: Expr = parser.parse() ?: return
         println(PrefixNotationFactory.create(expression))
@@ -87,8 +86,9 @@ object Lox {
         if (hadError) return
 
         // Parse tokens
-        println("\nInterpret: ----------------------------------------------------------------------------------------\n")
+        println("\nInterpret: --------------------------------------------------------------------------------------\n")
         val interpreter = Interpreter()
-        println(interpreter.interpret(expression))
+        val interpreted = interpreter.interpret(expression)
+        println(interpreted)
     }
 }

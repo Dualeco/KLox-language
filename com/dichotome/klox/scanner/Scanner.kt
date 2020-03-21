@@ -33,7 +33,7 @@ internal class Scanner(
 
     private val isAtEnd get() = current >= source.length
     private val isBeforeEndOfMultilineComment get() = peek() == '*' && peekNext() == '/'
-    private val isBeforeStartOfMultilineComment get()  = peek() == '/' && peekNext() == '*'
+    private val isBeforeStartOfMultilineComment get() = peek() == '/' && peekNext() == '*'
 
     fun scanTokens(): List<Token> {
         while (!isAtEnd) { // We are at the beginning of the next lexeme.
@@ -46,8 +46,8 @@ internal class Scanner(
 
     private fun scanToken() {
         when (val char = peek()) {
-            '(', ')', '{', '}', ':', ',', '.', '-', '+', ';', '*', '?', '^', '%', ' ', '\n', '\r', '\t' -> consumeSingleCharToken(char)
-            '!', '=', '<', '>' -> consumeTwoCharOperators(char)
+            '(', ')', '{', '}', ':', ',', '.', ';', '?', ' ', '\n', '\r', '\t' -> consumeSingleCharToken(char)
+            '%', '^', '/', '*', '+', '-', '!', '=', '<', '>' -> consumeTwoCharOperators(char)
             '/' -> consumeSlashOrComment()
             '"' -> consumeString()?.let { addToken(STRING, it) }
             else -> {
@@ -60,28 +60,33 @@ internal class Scanner(
         }
     }
 
-    private fun consumeTwoCharOperators(char: Char) = when(char) {
-        '!' -> if (peekNext() == '%') BANG_MOD else if (peekNext() == '=') BANG_EQUAL else BANG
+    private fun consumeTwoCharOperators(char: Char) = when (char) {
+        '%' -> if (peekNext() == '=') MOD_EQUAL else MOD
+        '^' -> if (peekNext() == '=') HAT_EQUAL else HAT
+        '/' -> if (peekNext() == '=') SLASH_EQUAL else SLASH
+        '*' -> if (peekNext() == '=') STAR_EQUAL else STAR
+        '+' -> if (peekNext() == '+') PLUS_PLUS else if (peekNext() == '=') PLUS_EQUAL else PLUS
+        '-' -> if (peekNext() == '-') MINUS_MINUS else if (peekNext() == '=') MINUS_EQUAL else MINUS
+        '!' -> if (peekNext() == '=') BANG_EQUAL else BANG
         '=' -> if (peekNext() == '=') EQUAL_EQUAL else EQUAL
         '<' -> if (peekNext() == '=') LESS_EQUAL else LESS
         '>' -> if (peekNext() == '=') GREATER_EQUAL else GREATER
         else -> null
     }?.let {
-        when(it) {
-            BANG_MOD, BANG_EQUAL, EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL -> advanceTwice()
-            BANG, EQUAL, LESS, GREATER -> advance()
+        when (it) {
+            HAT_EQUAL, MOD_EQUAL, SLASH_EQUAL, STAR_EQUAL, PLUS_PLUS, PLUS_EQUAL, MINUS_MINUS, MINUS_EQUAL, BANG_EQUAL, EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL -> advanceTwice()
+            HAT, MOD, SLASH, PLUS, MINUS, BANG, STAR, EQUAL, LESS, GREATER -> advance()
         }
         addToken(it)
     }
 
-    private fun consumeSlashOrComment() = when(peekNext()) {
+    private fun consumeSlashOrComment() = when (peekNext()) {
         '/' -> consumeSingleLineComment()
         '*' -> consumeMultilineComment()
-        else -> consumeSingleCharToken('/')
+        else -> consumeTwoCharOperators('/')
     }
 
-    private fun consumeSingleCharToken(char: Char) = when(char) {
-        '/' -> SLASH
+    private fun consumeSingleCharToken(char: Char) = when (char) {
         '(' -> LEFT_PAREN
         ')' -> RIGHT_PAREN
         '{' -> LEFT_BRACE
@@ -89,13 +94,8 @@ internal class Scanner(
         ':' -> COLON
         ',' -> COMMA
         '.' -> DOT
-        '-' -> MINUS
-        '+' -> PLUS
         ';' -> SEMICOLON
-        '*' -> STAR
         '?' -> QUESTION
-        '^' -> HAT
-        '%' -> MOD
         '\n' -> {
             newLine()
             null

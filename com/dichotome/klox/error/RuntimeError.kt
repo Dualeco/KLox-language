@@ -1,4 +1,4 @@
-package com.dichotome.klox.grammar
+package com.dichotome.klox.error
 
 import com.dichotome.klox.scanner.Token
 

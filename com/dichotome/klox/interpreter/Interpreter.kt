@@ -1,7 +1,7 @@
 package com.dichotome.klox.interpreter
 
+import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
-import com.dichotome.klox.grammar.RuntimeError
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType.*
 import kotlin.math.pow
@@ -20,7 +20,7 @@ class Interpreter : Expr.Visitor<Any> {
 
     private fun Expr.evaluate(): Any = accept(this@Interpreter)
 
-    private fun Any.isTruthy(): Boolean = when(this) {
+    private fun Any.isTruthy(): Boolean = when (this) {
         is Boolean -> this
         Unit -> false
         0.0 -> false
@@ -49,7 +49,7 @@ class Interpreter : Expr.Visitor<Any> {
 
     override fun visitBinaryExpr(binary: Expr.Binary): Any {
         val token = binary.operator
-        
+
         val left: Any = binary.left.evaluate()
         val right: Any = binary.right.evaluate()
 
@@ -68,7 +68,6 @@ class Interpreter : Expr.Visitor<Any> {
             STAR -> times(left, right, token)
             HAT -> pow(left, right, token)
             MOD -> mod(left, right, token)
-            BANG_MOD -> antiMod(left, right, token)
 
             else -> Unit
         }
@@ -136,7 +135,7 @@ class Interpreter : Expr.Visitor<Any> {
 
         throw RuntimeError(token, "Operands must be two Numbers")
     }
-    
+
     private fun plus(left: Any, right: Any, token: Token): Any {
         if (left is Double && right is Double)
             return left + right
@@ -156,7 +155,10 @@ class Interpreter : Expr.Visitor<Any> {
 
     private fun div(left: Any, right: Any, token: Token): Any {
         if (left is Double && right is Double)
-            return left / right
+            if (right == 0.0)
+                throw RuntimeError(token, "Division by zero")
+            else
+                return left / right
 
         throw RuntimeError(token, "Operands must be two Numbers")
     }
@@ -180,14 +182,10 @@ class Interpreter : Expr.Visitor<Any> {
 
     private fun mod(left: Any, right: Any, token: Token): Any {
         if (left is Double && right is Double)
-            return left % right
-
-        throw RuntimeError(token, "Operands must be two Numbers")
-    }
-
-    private fun antiMod(left: Any, right: Any, token: Token): Any {
-        if (left is Double && right is Double)
-            return left - left % right
+            if (right == 0.0)
+                throw RuntimeError(token, "Division by zero")
+            else
+                return left % right
 
         throw RuntimeError(token, "Operands must be two Numbers")
     }
