@@ -11,46 +11,66 @@ sealed class Expr {
     // implementing types
 
     interface Visitor<R> {
-        fun visitBinaryExpr(expr: Binary): R
-        fun visitCommaExpr(expression: Comma): R
-        fun visitGroupingExpr(expr: Grouping): R
-        fun visitLiteralExpr(expr: Literal): R
-        fun visitUnaryExpr(expr: Unary): R
-        fun visitVariableExpr(expr: Variable): R
-        fun visitAssignExpr(expr: Assign): R
-        fun visitLogicalExpr(expr: Logical): R
-        fun visitCallExpr(expr: Call): R
-        fun visitFuncExpr(expr: Func): R
+        fun visitBinaryExpr(binary: Binary): R
+        fun visitCommaExpr(comma: Comma): R
+        fun visitTernaryExpr(ternary: Ternary): R
+        fun visitGroupingExpr(grouping: Grouping): R
+        fun visitLiteralExpr(literal: Literal): R
+        fun visitUnaryExpr(unary: Unary): R
+        fun visitVariableExpr(variable: Variable): R
+        fun visitAssignExpr(assign: Assign): R
+        fun visitLogicalExpr(logical: Logical): R
+        fun visitCallExpr(call: Call): R
+        fun visitFuncExpr(func: Func): R
     }
 
     class None : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             throw error("Visited non expression.")
+
+        override fun toString(): String = "None"
     }
 
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBinaryExpr(this)
+
+        override fun toString(): String = "$left ${operator.lexeme} $right"
     }
 
-    class Comma(val left: Expr, val right: Expr): Expr() {
+    class Comma(val list: List<Expr>): Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitCommaExpr(this)
+
+        override fun toString(): String = list.joinToString(separator = ", ")
     }
 
-    class Grouping(val expression: Expr) : Expr() {
+    class Ternary(val first: Expr, val second: Expr, val third: Expr) : Expr() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitTernaryExpr(this)
+
+        override fun toString(): String = "$first ? $second : $third"
+    }
+
+    class Grouping(val expr: Expr) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitGroupingExpr(this)
+
+        override fun toString(): String = "($expr)"
     }
 
     class Literal(val value: Any?) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitLiteralExpr(this)
+
+        override fun toString(): String = "$value"
     }
 
     class Unary(val operator: Token, val right: Expr) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitUnaryExpr(this)
+
+        override fun toString(): String = "${operator.lexeme}$right"
     }
 
     class Variable(val name: Token) : Expr() {

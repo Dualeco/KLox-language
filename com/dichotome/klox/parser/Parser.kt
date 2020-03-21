@@ -25,20 +25,34 @@ class Parser(
 
     private var current = 0
 
-    fun parse(): Expr? =
-        try {
-            expression()
-        } catch (error: ParseError) {
-            null
-        }
+    fun parse(): Expr? = try {
+        expression()
+    } catch (error: ParseError) {
+        null
+    }
 
-    private fun expression() = comma()
+    private fun expression(): Expr = comma()
 
     private fun comma(): Expr {
-        var expr = equality()
+        val list = arrayListOf(ternary())
         while (match(COMMA)) {
-            val right = equality()
-            expr = Expr.Comma(expr, right)
+            list += ternary()
+        }
+        return if (list.size == 1) list.first() else Expr.Comma(list)
+    }
+
+    private fun ternary(): Expr {
+        var expr = equality()
+        val second: Expr
+        val third: Expr
+        if (match(QUESTION)) {
+            second = ternary()
+            if (match(COLON)) {
+                third = ternary()
+                expr = Expr.Ternary(expr, second, third)
+            } else {
+                throw error(peek(), "Incomplete ternary operator: $expr ? $second, ':' branch is missing")
+            }
         }
         return expr
     }
@@ -105,8 +119,28 @@ class Parser(
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
                 Expr.Grouping(expr)
             }
-            else -> throw error(peek(), "Expect expression.")
+            checkBinaryOperator(peek()) ->
+                throw noLeftOperandError(peek())
+            else -> throw error(peek() , "Expect expression.")
         }
+
+    private fun checkBinaryOperator(token: Token) =
+        token.type in listOf(
+            COMMA,
+            QUESTION,
+            BANG_EQUAL,
+            EQUAL_EQUAL,
+            GREATER,
+            GREATER_EQUAL,
+            LESS,
+            LESS_EQUAL,
+            MINUS,
+            PLUS,
+            SLASH,
+            STAR,
+            BANG,
+            MINUS
+        )
 
     private fun match(vararg types: TokenType): Boolean {
         types.forEach {
@@ -122,6 +156,9 @@ class Parser(
         if (check(type)) return advance()
         throw error(peek(), message)
     }
+
+    private fun noLeftOperandError(token: Token): ParseError =
+        error(token, "Missing left operand before ${token.lexeme}")
 
     private fun error(token: Token, message: String): ParseError {
         Parser.error(token, message)
@@ -142,6 +179,9 @@ class Parser(
 
     private fun isAtEnd(): Boolean =
         peek().type === EOF
+
+    private fun next(): Token =
+        tokens[current + 1]
 
     private fun peek(): Token =
         tokens[current]

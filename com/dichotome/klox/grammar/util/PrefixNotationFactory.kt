@@ -8,46 +8,50 @@ object PrefixNotationFactory : Expr.Visitor<String> {
 
     private fun parenthesize(name: String, vararg expressions: Expr): String =
         expressions.map { expr -> expr.accept(this) }
-            .joinToString { expr -> " $expr" }
+            .joinToString(separator = ", ")
             .let { exprs -> "($name $exprs)" }
 
-    override fun visitBinaryExpr(expr: Expr.Binary): String = with(expr) {
+    override fun visitBinaryExpr(binary: Expr.Binary): String = with(binary) {
         parenthesize(operator.lexeme, left, right)
     }
 
-    override fun visitCommaExpr(expr: Expr.Comma): String = with(expr) {
-        parenthesize("comma", left, right)
+    override fun visitCommaExpr(comma: Expr.Comma): String = with(comma) {
+        parenthesize("comma", *list.toTypedArray())
     }
 
-    override fun visitGroupingExpr(expr: Expr.Grouping): String = with(expr) {
-        parenthesize("group", expression)
+    override fun visitTernaryExpr(ternary: Expr.Ternary): String = with(ternary) {
+        parenthesize("ternary", first, second, third)
     }
 
-    override fun visitLiteralExpr(expr: Expr.Literal): String = with(expr) {
+    override fun visitGroupingExpr(grouping: Expr.Grouping): String = with(grouping) {
+        parenthesize("group", expr)
+    }
+
+    override fun visitLiteralExpr(literal: Expr.Literal): String = with(literal) {
         value?.toString() ?: "nil"
     }
 
-    override fun visitUnaryExpr(expr: Expr.Unary): String = with(expr) {
+    override fun visitUnaryExpr(unary: Expr.Unary): String = with(unary) {
         parenthesize(operator.lexeme, right)
     }
 
-    override fun visitVariableExpr(expr: Expr.Variable): String {
+    override fun visitVariableExpr(variable: Expr.Variable): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun visitAssignExpr(expr: Expr.Assign): String {
+    override fun visitAssignExpr(assign: Expr.Assign): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun visitLogicalExpr(expr: Expr.Logical): String {
+    override fun visitLogicalExpr(logical: Expr.Logical): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun visitCallExpr(expr: Expr.Call): String {
+    override fun visitCallExpr(call: Expr.Call): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun visitFuncExpr(expr: Expr.Func): String {
+    override fun visitFuncExpr(func: Expr.Func): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

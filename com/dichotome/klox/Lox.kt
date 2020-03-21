@@ -60,10 +60,13 @@ object Lox {
     private fun scan(source: String) {
 
         // Scan tokens
+        println("\nScanning: -------------------------------------------------------------------------------------------\n")
         val scanner = Scanner(source)
         val tokens: List<Token> = scanner.scanTokens()
+        tokens.forEach { println(it) }
 
         // Parse tokens
+        println("\nParsing: --------------------------------------------------------------------------------------------\n")
         val parser = Parser(tokens)
         val expression: Expr = parser.parse() ?: return
 
