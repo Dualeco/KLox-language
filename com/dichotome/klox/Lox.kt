@@ -1,5 +1,8 @@
 package com.dichotome.klox
 
+import com.dichotome.klox.grammar.Expr
+import com.dichotome.klox.grammar.util.PrefixNotationFactory
+import com.dichotome.klox.parser.Parser
 import com.dichotome.klox.scanner.Scanner
 import com.dichotome.klox.scanner.Token
 import java.io.BufferedReader
@@ -60,17 +63,13 @@ object Lox {
         val scanner = Scanner(source)
         val tokens: List<Token> = scanner.scanTokens()
 
-        tokens.forEach {
-            println(it)
-        }
-
-        /*// Parse tokens
+        // Parse tokens
         val parser = Parser(tokens)
         val expression: Expr = parser.parse() ?: return
 
         // Stop if there was a syntax error.
         if (hadError) return
 
-        println(PrefixNotationFactory.create(expression))*/
+        println(PrefixNotationFactory.create(expression))
     }
 }
