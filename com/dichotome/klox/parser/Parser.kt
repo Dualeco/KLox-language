@@ -30,9 +30,14 @@ class Parser(
     }
 
     private fun varDeclaration(): Stmt {
-        if (peek().type != IDENTIFIER && next().type != EQUAL) {
+        if (peek().type != IDENTIFIER) {
             return statement()
         }
+
+        if (next().type != EQUAL) {
+            return Stmt.Var(consume(IDENTIFIER, ""), null)
+        }
+
         val assignment = assignment()
 
         if (assignment !is Stmt.Assign) {
@@ -62,19 +67,17 @@ class Parser(
         }
 
     private fun assignment(): Stmt {
-        if (match(IDENTIFIER)) {
-            val target = previous()
-            if (match(EQUAL)) {
-                return Stmt.Assign(
-                    target,
-                    if (peek().type == IDENTIFIER && next().type == EQUAL) {
-                        assignment()
-                    } else {
-                        Stmt.Expression(expression())
-                    }
-                )
-            }
-
+        if (peek().type == IDENTIFIER && next().type == EQUAL) {
+            val target = consume(IDENTIFIER, "")
+            consume(EQUAL, "")
+            return Stmt.Assign(
+                target,
+                if (peek().type == IDENTIFIER && next().type == EQUAL) {
+                    assignment()
+                } else {
+                    Stmt.Expression(expression())
+                }
+            )
         }
         return statement()
     }
@@ -183,7 +186,7 @@ class Parser(
             }
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
-            else -> throw error(peek(), "Expect expression.")
+            else -> throw error(peek(), "Expect expression. ${previous()}, ${peek()}")
         }
 
     private fun checkBinaryOperator(token: Token) =

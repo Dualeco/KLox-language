@@ -22,21 +22,30 @@ sealed class Stmt {
     class None : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             throw error("Visited non statement.")
+
+        override fun toString(): String = "None Stmt"
     }
 
     class Expression(val expression: Expr) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitExpressionStmt(this)
+
+
+        override fun toString(): String = "Expression Stmt $expression"
     }
 
     class Print(val expression: Expr) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitPrintStmt(this)
+
+        override fun toString(): String = "Print Stmt ($expression)"
     }
 
     class Var(val name: Token, val assignment: Assign?) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitVarStmt(this)
+
+        override fun toString(): String = "Var Stmt (${assignment?.let { assignment } ?: name.lexeme})"
     }
 
     class Block(val statements: List<Stmt>) : Stmt() {
@@ -44,7 +53,7 @@ sealed class Stmt {
             visitor.visitBlockStmt(this)
     }
 
-    class If(val condition: Expr, val then: Stmt, val other: Stmt= None()) : Stmt() {
+    class If(val condition: Expr, val then: Stmt, val other: Stmt = None()) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitIfStmt(this)
     }
@@ -72,5 +81,16 @@ sealed class Stmt {
     class Assign(val name: Token, val value: Stmt?) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitAssignStmt(this)
+
+        override fun toString(): String {
+            if (value is Assign) {
+                return "${name.lexeme}, ${value.value}"
+            }
+
+            if (value is Expression?) {
+                return "${name.lexeme} = ${value?.expression}"
+            }
+            return "${name.lexeme} = $value"
+        }
     }
 }

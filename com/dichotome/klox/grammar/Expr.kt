@@ -75,6 +75,8 @@ sealed class Expr {
     class Variable(val name: Token) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitVariableExpr(this)
+
+        override fun toString() = "var ${name.lexeme}"
     }
 
     class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr() {
