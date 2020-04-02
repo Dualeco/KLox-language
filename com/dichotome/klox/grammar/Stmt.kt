@@ -16,6 +16,7 @@ sealed class Stmt {
         fun visitBreakStmt(stmt: Break): R
         fun visitFunctionStmt(stmt: Function): R
         fun visitReturnStmt(stmt: Return): R
+        fun visitAssignStmt(assignment: Assign): R
     }
 
     class None : Stmt() {
@@ -33,7 +34,7 @@ sealed class Stmt {
             visitor.visitPrintStmt(this)
     }
 
-    class Var(val name: Token, val initializer: Expr?) : Stmt() {
+    class Var(val name: Token, val assignment: Assign?) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitVarStmt(this)
     }
@@ -66,5 +67,10 @@ sealed class Stmt {
     class Return(val keyword: Token, val value: Expr) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitReturnStmt(this)
+    }
+
+    class Assign(val name: Token, val value: Stmt?) : Stmt() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitAssignStmt(this)
     }
 }

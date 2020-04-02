@@ -84,7 +84,6 @@ object Lox {
 
         // Parse tokens
         //println("\nInterpret: --------------------------------------------------------------------------------------\n")
-        val interpreter = Interpreter()
-        interpreter.interpret(statements)
+        Interpreter.interpret(statements)
     }
 }

@@ -2,7 +2,6 @@ package com.dichotome.klox.parser
 
 import com.dichotome.klox.Lox
 import com.dichotome.klox.grammar.Expr
-import com.dichotome.klox.grammar.Expr.*
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
@@ -15,49 +14,45 @@ class Parser(
     private class ParseError : RuntimeException()
 
     companion object {
-        fun error(token: Token, message: String) {
-            if (token.type === EOF) {
-                Lox.report(token.line, " at end", message)
-            } else {
-                Lox.report(token.line, " at '" + token.lexeme + "'", message)
-            }
-        }
+        fun error(token: Token, message: String) = Lox.report(
+            token.line,
+            " at ${if (token.type === EOF) "end" else "'" + token.lexeme + "'"}",
+            message
+        )
     }
 
     private var current = 0
 
-    fun parse(): List<Stmt> {
-        val statements = arrayListOf<Stmt>()
+    fun parse(): List<Stmt> = arrayListOf<Stmt>().apply {
         while (!isAtEnd()) {
-            declaration()?.let {
-                statements.add(it)
-            }
+            declaration()?.let { add(it) }
         }
-        return statements
     }
 
     private fun varDeclaration(): Stmt {
-        val token = consume(IDENTIFIER, "Expect variable name")
-        var initializer: Expr? = null
-        if (match(EQUAL)) {
-            initializer = expression()
+        if (peek().type != IDENTIFIER && next().type != EQUAL) {
+            return statement()
         }
-        consumeLineEnd()
+        val assignment = assignment()
 
-        return Stmt.Var(token, initializer)
+        if (assignment !is Stmt.Assign) {
+            return statement()
+        }
+
+        return Stmt.Var(assignment.name, assignment)
     }
 
-    private fun declaration(): Stmt? =
-        try {
-            if (match(VAR)) {
-                varDeclaration()
-            } else {
-                statement()
-            }
-        } catch (e: ParseError) {
-            synchronize()
-            null
+    private fun declaration(): Stmt? = try {
+        when {
+            match(VAR) -> varDeclaration()
+            else -> assignment()
+        }.also {
+            consumeLineEnd()
         }
+    } catch (e: ParseError) {
+        synchronize()
+        null
+    }
 
     private fun statement(): Stmt =
         if (match(PRINT)) {
@@ -66,17 +61,27 @@ class Parser(
             expressionStatement()
         }
 
-    private fun printStatement(): Stmt {
-        val expr = expression()
-        consumeLineEnd()
-        return Stmt.Print(expr)
+    private fun assignment(): Stmt {
+        if (match(IDENTIFIER)) {
+            val target = previous()
+            if (match(EQUAL)) {
+                return Stmt.Assign(
+                    target,
+                    if (peek().type == IDENTIFIER && next().type == EQUAL) {
+                        assignment()
+                    } else {
+                        Stmt.Expression(expression())
+                    }
+                )
+            }
+
+        }
+        return statement()
     }
 
-    private fun expressionStatement(): Stmt {
-        val expr = expression()
-        consumeLineEnd()
-        return Stmt.Expression(expr)
-    }
+    private fun printStatement(): Stmt = Stmt.Print(expression())
+
+    private fun expressionStatement(): Stmt = Stmt.Expression(expression())
 
     private fun expression(): Expr = comma()
 
@@ -101,12 +106,14 @@ class Parser(
                     expr = Expr.Ternary(firstToken, expr, second, third)
                 } else {
                     throw error(
-                        peek(), "Incomplete ternary operator: '$expr ? $second'\n      Cause: ':' branch is missing"
+                        peek(),
+                        "Incomplete ternary operator: '$expr ? $second'"
                     )
                 }
             } catch (e: ParseError) {
                 throw error(
-                    previous(), "Incomplete ternary operator: '$expr ?'\n      Cause '?' and ':' branches are missing"
+                    previous(),
+                    "Incomplete ternary operator: '$expr ?'\nCause '?' and ':' branches are missing"
                 )
             }
         }
@@ -164,15 +171,15 @@ class Parser(
 
     private fun primary(): Expr =
         when {
-            match(FALSE) -> Literal(false)
-            match(TRUE) -> Literal(true)
-            match(NIL) -> Literal(null)
-            match(NUMBER, STRING) -> Literal(previous().literal)
-            match(IDENTIFIER) -> Variable(previous())
+            match(FALSE) -> Expr.Literal(false)
+            match(TRUE) -> Expr.Literal(true)
+            match(NIL) -> Expr.Literal(null)
+            match(NUMBER, STRING) -> Expr.Literal(previous().literal)
+            match(IDENTIFIER) -> Expr.Variable(previous())
             match(LEFT_PAREN) -> {
                 val expr = expression()
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
-                Grouping(expr)
+                Expr.Grouping(expr)
             }
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
@@ -208,7 +215,8 @@ class Parser(
         return false
     }
 
-    private fun consumeLineEnd(): Token = consume(listOf(NEW_LINE, EOF), "Expect new line after expression")
+    private fun consumeLineEnd(): Token =
+        consume(listOf(NEW_LINE, EOF), "Expect new line after expression ${peek().lexeme}")
 
     private fun consume(type: TokenType, message: String): Token {
         if (check(type)) return advance()

@@ -39,10 +39,6 @@ object PrefixNotationFactory : Expr.Visitor<String> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun visitAssignExpr(assign: Expr.Assign): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     override fun visitLogicalExpr(logical: Expr.Logical): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

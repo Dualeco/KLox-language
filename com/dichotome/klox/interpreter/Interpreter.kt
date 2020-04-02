@@ -1,14 +1,16 @@
 package com.dichotome.klox.interpreter
 
 import com.dichotome.klox.Lox
+import com.dichotome.klox.environment.Environment
 import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType.*
+import java.util.*
 import kotlin.math.pow
 
-class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
+object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     fun interpret(statements: List<Stmt>) =
         try {
@@ -91,17 +93,12 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         if (condition is Boolean) {
             if (condition) second.evaluate() else third.evaluate()
         } else {
-            throw RuntimeError(ternary.operator, "The value before '?' must be Boolean" )
+            throw RuntimeError(ternary.operator, "The value before '?' must be Boolean")
         }
     }
 
-    override fun visitVariableExpr(variable: Expr.Variable): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visitAssignExpr(assign: Expr.Assign): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun visitVariableExpr(variable: Expr.Variable): Any =
+        Environment.get(variable.name)
 
     override fun visitLogicalExpr(logical: Expr.Logical): Any {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -128,8 +125,26 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         println(stringify(value))
     }
 
-    override fun visitVarStmt(stmt: Stmt.Var) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitVarStmt(stmt: Stmt.Var) = with(stmt) {
+        Environment.define(name.lexeme, Unit)
+        assignment?.execute() ?: return@with
+    }
+
+    override fun visitAssignStmt(assignment: Stmt.Assign) {
+        var stmt: Stmt? = assignment
+        val names = LinkedList<Token>()
+
+        while (stmt is Stmt.Assign) {
+            names.addFirst(stmt.name)
+            stmt = stmt.value
+        }
+
+        if (stmt is Stmt.Expression?) {
+            val value = stmt?.expression?.evaluate()
+            names.forEach {
+                Environment.assign(it, value ?: Unit)
+            }
+        }
     }
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
