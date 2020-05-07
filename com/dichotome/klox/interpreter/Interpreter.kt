@@ -12,7 +12,7 @@ import kotlin.math.pow
 
 object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
-    private val environment = Environment()
+    private var environment = Environment()
 
     fun interpret(statements: List<Stmt>) =
         try {
@@ -32,6 +32,18 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun Stmt.execute(): Any = accept(this@Interpreter)
 
+    private fun Stmt.Block.execute(localEnvironment: Environment) {
+        val previousEnvironment = environment
+        try {
+            environment = localEnvironment
+            statements.forEach { it.execute() }
+        } finally {
+            environment = previousEnvironment
+        }
+    }
+
+    private fun Stmt.Block.executeWithNewEnvironment() = execute(Environment(environment))
+
     private fun Any.isTruthy(): Boolean = when (this) {
         is Boolean -> this
         Unit -> false
@@ -43,6 +55,8 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     private fun Any.isNotTruthy(): Boolean = !isTruthy()
 
     //region EXPR ------------------------------------------------------------------------------------------------------
+
+    override fun visitNoneExpr() = Unit
 
     override fun visitLiteralExpr(literal: Expr.Literal): Any = literal.value ?: Unit
 
@@ -150,7 +164,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        stmt.executeWithNewEnvironment()
     }
 
     override fun visitIfStmt(stmt: Stmt.If) {

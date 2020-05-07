@@ -11,6 +11,7 @@ sealed class Expr {
     // implementing types
 
     interface Visitor<R> {
+        fun visitNoneExpr(): R
         fun visitBinaryExpr(binary: Binary): R
         fun visitCommaExpr(comma: Comma): R
         fun visitTernaryExpr(ternary: Ternary): R
@@ -25,7 +26,7 @@ sealed class Expr {
 
     class None : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
-            throw error("Visited non expression.")
+            visitor.visitNoneExpr()
 
         override fun toString(): String = "None"
     }

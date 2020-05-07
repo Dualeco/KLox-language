@@ -80,7 +80,7 @@ object Lox {
         // Parse tokens
         //println("\nParsing: ----------------------------------------------------------------------------------------\n")
         val statements: List<Stmt> = Parser(tokens).parse()
-        //println(statements.toString())
+        //statements.forEach { println(it) }
 
         // Stop if there was a syntax error.
         if (hadError) return

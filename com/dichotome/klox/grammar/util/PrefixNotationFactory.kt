@@ -11,6 +11,8 @@ object PrefixNotationFactory : Expr.Visitor<String> {
             .joinToString(separator = ", ")
             .let { exprs -> "($name $exprs)" }
 
+    override fun visitNoneExpr() = ""
+
     override fun visitBinaryExpr(binary: Expr.Binary): String = with(binary) {
         parenthesize(operator.lexeme, left, right)
     }

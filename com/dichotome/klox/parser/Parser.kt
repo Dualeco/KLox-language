@@ -29,7 +29,31 @@ class Parser(
         }
     }
 
-    private fun varDeclaration(): Stmt {
+    private fun block(): Stmt {
+        val statements = arrayListOf<Stmt>()
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            declaration()?.let { statements += it }
+        }
+
+        consume(RIGHT_BRACE, "Expect } at the end of block")
+
+        return Stmt.Block(statements)
+    }
+
+    private fun declaration(): Stmt? = try {
+        when {
+            match(VAR) -> varStatement()
+            else -> assignment()
+        }.also {
+            match(NEW_LINE)
+        }
+    } catch (e: ParseError) {
+        synchronize()
+        null
+    }
+
+    private fun varStatement(): Stmt {
         if (peek().type != IDENTIFIER) {
             return statement()
         }
@@ -47,25 +71,6 @@ class Parser(
         return Stmt.Var(assignment.name, assignment)
     }
 
-    private fun declaration(): Stmt? = try {
-        when {
-            match(VAR) -> varDeclaration()
-            else -> assignment()
-        }.also {
-            consumeLineEnd()
-        }
-    } catch (e: ParseError) {
-        synchronize()
-        null
-    }
-
-    private fun statement(): Stmt =
-        if (match(PRINT)) {
-            printStatement()
-        } else {
-            expressionStatement()
-        }
-
     private fun assignment(): Stmt {
         if (peek().type == IDENTIFIER && next().type == EQUAL) {
             val target = consume(IDENTIFIER, "")
@@ -82,9 +87,15 @@ class Parser(
         return statement()
     }
 
-    private fun printStatement(): Stmt = Stmt.Print(expression())
+    private fun print(): Stmt = Stmt.Print(expression())
 
     private fun expressionStatement(): Stmt = Stmt.Expression(expression())
+
+    private fun statement(): Stmt = when {
+        match(PRINT) -> print()
+        match(LEFT_BRACE) -> block()
+        else -> expressionStatement()
+    }
 
     private fun expression(): Expr = comma()
 
@@ -184,6 +195,7 @@ class Parser(
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
                 Expr.Grouping(expr)
             }
+            match(NEW_LINE) -> Expr.None()
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
             else -> throw error(peek(), "Expect expression. ${previous()}, ${peek()}")

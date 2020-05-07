@@ -51,6 +51,8 @@ sealed class Stmt {
     class Block(val statements: List<Stmt>) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBlockStmt(this)
+
+        override fun toString() = "{\n" + statements.joinToString { "  $it\n" } + "}"
     }
 
     class If(val condition: Expr, val then: Stmt, val other: Stmt = None()) : Stmt() {
