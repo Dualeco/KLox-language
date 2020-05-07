@@ -12,6 +12,8 @@ import kotlin.math.pow
 
 object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
+    private val environment = Environment()
+
     fun interpret(statements: List<Stmt>) =
         try {
             statements.forEach { it.execute() }
@@ -98,7 +100,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitVariableExpr(variable: Expr.Variable): Any =
-        Environment.get(variable.name)
+        environment[variable.name]
 
     override fun visitLogicalExpr(logical: Expr.Logical): Any {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -126,7 +128,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) = with(stmt) {
-        Environment.define(name.lexeme, Unit)
+        environment += name
         assignment?.execute() ?: return@with
     }
 
@@ -140,9 +142,9 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
 
         if (stmt is Stmt.Expression?) {
-            val value = stmt?.expression?.evaluate()
+            val value = stmt?.expression?.evaluate() ?: Unit
             names.forEach {
-                Environment.assign(it, value ?: Unit)
+                environment[it] = value
             }
         }
     }
