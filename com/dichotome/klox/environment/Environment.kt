@@ -3,7 +3,8 @@ package com.dichotome.klox.environment
 import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.scanner.Token
 
-class Environment {
+class Environment(private val enclosing: Environment? = null) {
+
     private val variables: MutableMap<String, Any> = hashMapOf()
 
     operator fun get(token: Token) = getVariable(token)
@@ -12,17 +13,23 @@ class Environment {
 
     operator fun set(token: Token, value: Any) = assignVariable(token, value)
 
-    private fun getVariable(token: Token): Any =
-        variables[token.lexeme] ?: throw RuntimeError(token, "Undefined variable '${token.lexeme}'")
+    private fun getVariable(token: Token): Any = token.lexeme.let { name ->
+        variables[name] ?: enclosing?.getVariable(token) ?: throw RuntimeError(
+            token,
+            "Undefined variable '${token.lexeme}'"
+        )
+    }
 
     private fun defineVariable(name: String) {
         variables[name] = Unit
     }
 
     private fun assignVariable(token: Token, value: Any) {
-        getVariable(token)
-
-        // if variable is defined
-        variables[token.lexeme] = value
+        variables[token.lexeme]?.let {
+            variables[token.lexeme] = value
+        } ?: enclosing?.assignVariable(token, value) ?: throw RuntimeError(
+            token,
+            "Undefined variable '${token.lexeme}'"
+        )
     }
 }
