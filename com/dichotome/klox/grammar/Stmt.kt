@@ -55,7 +55,7 @@ sealed class Stmt {
         override fun toString() = "{\n" + statements.joinToString { "  $it\n" } + "}"
     }
 
-    class If(val condition: Expr, val then: Stmt, val other: Stmt = None()) : Stmt() {
+    class If(val condition: Expr, val then: Stmt, val other: Stmt? = None()) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitIfStmt(this)
     }

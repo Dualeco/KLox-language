@@ -1,6 +1,5 @@
-var a = 1
-{
-    var a = a + 1
+if (1 and false or true) {
+    print 1 and false
+} else {
+    print 5
 }
-print a
-

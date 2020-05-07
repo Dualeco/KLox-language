@@ -87,11 +87,23 @@ class Parser(
         return statement()
     }
 
+    private fun ifStatement(): Stmt {
+        consume(LEFT_PAREN, "Expect '(' after 'if'")
+        val condition = expression()
+        consume(RIGHT_PAREN, "Expect ')' after 'if'")
+
+        val thenBranch = statement()
+        val elseBranch = if (match(ELSE)) statement() else null
+
+        return Stmt.If(condition, thenBranch, elseBranch)
+    }
+
     private fun print(): Stmt = Stmt.Print(expression())
 
     private fun expressionStatement(): Stmt = Stmt.Expression(expression())
 
     private fun statement(): Stmt = when {
+        match(IF) -> ifStatement()
         match(PRINT) -> print()
         match(LEFT_BRACE) -> block()
         else -> expressionStatement()
@@ -108,7 +120,7 @@ class Parser(
     }
 
     private fun ternary(): Expr {
-        var expr = equality()
+        var expr = or()
         val second: Expr
         val third: Expr
         val firstToken = peek()
@@ -131,6 +143,30 @@ class Parser(
                 )
             }
         }
+        return expr
+    }
+
+    private fun or(): Expr {
+        var expr = and()
+
+        while (match(OR)) {
+            val operator = previous()
+            val right = and()
+            expr = Expr.Logical(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun and(): Expr {
+        var expr = equality()
+
+        while (match(AND)) {
+            val operator = previous()
+            val right = equality()
+            expr = Expr.Logical(expr, operator, right)
+        }
+
         return expr
     }
 

@@ -46,6 +46,9 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun Any.isTruthy(): Boolean = when (this) {
         is Boolean -> this
+        is Expr.Literal -> value?.isTruthy() ?: false
+        "true" -> true
+        "false" -> false
         Unit -> false
         0.0 -> false
         1.0 -> true
@@ -117,7 +120,16 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         environment[variable.name]
 
     override fun visitLogicalExpr(logical: Expr.Logical): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        with(logical) {
+            val left = left.evaluate()
+            if (operator.type == OR) {
+                if (left.isTruthy()) return left
+            } else {
+                if (left.isNotTruthy()) return left
+            }
+
+            return right.evaluate()
+        }
     }
 
     override fun visitCallExpr(call: Expr.Call): Any {
@@ -168,7 +180,9 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitIfStmt(stmt: Stmt.If) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        with(stmt) {
+            if (condition.evaluate().isTruthy()) then.execute() else other?.execute()
+        }
     }
 
     override fun visitWhileStmt(stmt: Stmt.While) {
