@@ -5,6 +5,8 @@ import com.dichotome.klox.environment.Environment
 import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
+import com.dichotome.klox.interpreter.callable.LoxCallable
+import com.dichotome.klox.interpreter.callable.LoxFunction
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType.*
 import java.util.*
@@ -15,8 +17,8 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     private class BreakError(token: Token) : RuntimeError(token, "Break statement outside a loop")
     private class ContinueError(token: Token) : RuntimeError(token, "Continue statement outside a loop")
 
-
-    private var environment = Environment()
+    val globals = Environment()
+    private var environment = globals
 
     fun interpret(statements: List<Stmt>) =
         try {
@@ -36,15 +38,18 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun Stmt.execute(): Any = accept(this@Interpreter)
 
-    private fun Stmt.Block.execute(localEnvironment: Environment) {
+    fun executeBlock(block: Stmt.Block, localEnvironment: Environment) {
         val previousEnvironment = environment
         try {
             environment = localEnvironment
-            statements.forEach { it.execute() }
+            block.statements.forEach { it.execute() }
         } finally {
             environment = previousEnvironment
         }
     }
+
+    fun Stmt.Block.execute(localEnvironment: Environment) =
+        executeBlock(this, localEnvironment)
 
     private fun Stmt.Block.executeWithNewEnvironment() = execute(Environment(environment))
 
@@ -138,11 +143,27 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visitCallExpr(call: Expr.Call): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitCallExpr(call: Expr.Call): Any = with(call) {
+        val arguments = arguments.map {
+            it.evaluate()
+        }
+
+        val callee = callee.evaluate()
+
+        val function = callee as? LoxCallable ?: throw RuntimeError(
+            paren, "Only functions and classes are callable"
+        )
+
+        if (function.arity != arguments.size) {
+            throw RuntimeError(
+                paren, "Expected ${function.arity} arguments but got ${arguments.size}."
+            )
+        }
+
+        return callee.call(this@Interpreter, arguments)
     }
 
-    override fun visitFuncExpr(func: Expr.Func): Any {
+    override fun visitFuncExpr(func: Expr.Fun): Any {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -160,7 +181,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) = with(stmt) {
-        environment += name
+        environment.define(name.lexeme)
         assignment?.execute() ?: return@with
     }
 
@@ -231,7 +252,8 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val function = LoxFunction(stmt)
+        environment.define(stmt.name.lexeme, function)
     }
 
     override fun visitReturnStmt(stmt: Stmt.Return) {
