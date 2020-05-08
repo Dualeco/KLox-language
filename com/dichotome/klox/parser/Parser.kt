@@ -43,7 +43,7 @@ class Parser(
 
     private fun declaration(): Stmt? = try {
         when {
-            match(VAR) -> varStatement()
+            match(VAR) -> varDeclaration()
             else -> assignment()
         }.also {
             match(NEW_LINE)
@@ -53,7 +53,7 @@ class Parser(
         null
     }
 
-    private fun varStatement(): Stmt {
+    private fun varDeclaration(): Stmt {
         if (peek().type != IDENTIFIER) {
             return statement()
         }
@@ -101,7 +101,7 @@ class Parser(
 
         var initializer = when {
             match(SEMICOLON) -> null
-            match(VAR) -> varStatement()
+            match(VAR) -> varDeclaration()
             else -> expressionStatement()
         }
         consume(SEMICOLON, "Expect ';' after 'for' condition")
