@@ -42,16 +42,7 @@ sealed class Stmt {
         override fun toString(): String = "Var Stmt (${assignment?.let { assignment } ?: name.lexeme})"
     }
 
-    class Block: Stmt {
-        val statements: List<Stmt>
-
-        constructor(statements: List<Stmt>): super() {
-            this.statements = statements
-        }
-
-        constructor(vararg statements: Stmt): super() {
-            this.statements = statements.asList()
-        }
+    class Block(val statements: List<Stmt>) : Stmt() {
 
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBlockStmt(this)

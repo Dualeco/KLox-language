@@ -28,7 +28,7 @@ sealed class Expr {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitNoneExpr()
 
-        override fun toString(): String = "None"
+        override fun toString(): String = ""
     }
 
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr() {
@@ -77,7 +77,7 @@ sealed class Expr {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitVariableExpr(this)
 
-        override fun toString() = "var ${name.lexeme}"
+        override fun toString() = name.lexeme
     }
 
     class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr() {
@@ -88,6 +88,9 @@ sealed class Expr {
     class Call(val callee: Expr, val paren: Token, val arguments: List<Expr>) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitCallExpr(this)
+
+        override fun toString(): String =
+            "$callee(${arguments.joinToString(", ")})"
     }
 
     class Fun(val params: List<Token>, val body: List<Stmt>) : Expr() {
