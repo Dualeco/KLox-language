@@ -7,27 +7,25 @@ class Environment(private val enclosing: Environment? = null) {
 
     private val variables: MutableMap<String, Any> = hashMapOf()
 
-    operator fun get(token: Token) = getVariable(token)
+    fun define(name: String, value: Any = Unit) {
+        variables[name] = value
+    }
 
-    operator fun plusAssign(token: Token) = defineVariable(token.lexeme)
+    operator fun get(token: Token) = getToken(token)
 
-    operator fun set(token: Token, value: Any) = assignVariable(token, value)
+    operator fun set(token: Token, value: Any) = assign(token, value)
 
-    private fun getVariable(token: Token): Any = token.lexeme.let { name ->
-        variables[name] ?: enclosing?.getVariable(token) ?: throw RuntimeError(
+    private fun getToken(token: Token): Any = token.lexeme.let { name ->
+        variables[name] ?: enclosing?.get(token) ?: throw RuntimeError(
             token,
             "Undefined variable '${token.lexeme}'"
         )
     }
 
-    private fun defineVariable(name: String) {
-        variables[name] = Unit
-    }
-
-    private fun assignVariable(token: Token, value: Any) {
+    private fun assign(token: Token, value: Any) {
         variables[token.lexeme]?.let {
             variables[token.lexeme] = value
-        } ?: enclosing?.assignVariable(token, value) ?: throw RuntimeError(
+        } ?: enclosing?.assign(token, value) ?: throw RuntimeError(
             token,
             "Undefined variable '${token.lexeme}'"
         )
