@@ -21,7 +21,7 @@ sealed class Expr {
         fun visitVariableExpr(variable: Variable): R
         fun visitLogicalExpr(logical: Logical): R
         fun visitCallExpr(call: Call): R
-        fun visitFuncExpr(func: Func): R
+        fun visitFuncExpr(func: Fun): R
     }
 
     class None : Expr() {
@@ -90,7 +90,7 @@ sealed class Expr {
             visitor.visitCallExpr(this)
     }
 
-    class Func(val params: List<Token>, val body: List<Stmt>) : Expr() {
+    class Fun(val params: List<Token>, val body: List<Stmt>) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFuncExpr(this)
     }

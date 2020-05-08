@@ -97,7 +97,7 @@ sealed class Stmt {
             visitor.visitContinueStmt(this)
     }
 
-    class Function(val name: Token, val function: Expr.Func) : Stmt() {
+    class Function(val name: Token, val params: List<Token>, val body: Block) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFunctionStmt(this)
     }
