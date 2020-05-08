@@ -3,6 +3,7 @@ package com.dichotome.klox.interpreter.callable
 import com.dichotome.klox.environment.Environment
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
+import com.dichotome.klox.interpreter.error.ReturnError
 
 class LoxFunction(private val declaration: Stmt.Function) : LoxCallable {
 
@@ -15,7 +16,11 @@ class LoxFunction(private val declaration: Stmt.Function) : LoxCallable {
             params.forEachIndexed { i, token ->
                 environment.define(token.lexeme, arguments[i])
             }
-            interpreter.executeBlock(body, environment)
+            try {
+                interpreter.executeBlock(body, environment)
+            } catch (returnError: ReturnError) {
+                return@with returnError.value
+            }
         }
 
         return Unit

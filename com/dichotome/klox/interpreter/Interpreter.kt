@@ -7,6 +7,9 @@ import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.callable.LoxCallable
 import com.dichotome.klox.interpreter.callable.LoxFunction
+import com.dichotome.klox.interpreter.error.BreakError
+import com.dichotome.klox.interpreter.error.ContinueError
+import com.dichotome.klox.interpreter.error.ReturnError
 import com.dichotome.klox.interpreter.native.Native
 import com.dichotome.klox.interpreter.native.stringify
 import com.dichotome.klox.scanner.Token
@@ -15,9 +18,6 @@ import java.util.*
 import kotlin.math.pow
 
 object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
-
-    private class BreakError(token: Token) : RuntimeError(token, "Break statement outside a loop")
-    private class ContinueError(token: Token) : RuntimeError(token, "Continue statement outside a loop")
 
     val globals = Environment()
     private var environment = globals
@@ -250,8 +250,8 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         environment.define(stmt.name.lexeme, function)
     }
 
-    override fun visitReturnStmt(stmt: Stmt.Return) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitReturnStmt(stmt: Stmt.Return) = with(stmt) {
+        throw ReturnError(keyword, value?.evaluate() ?: Unit)
     }
 
     //endregion

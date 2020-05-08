@@ -100,7 +100,7 @@ sealed class Stmt {
             "Function ${name.lexeme}(${params.joinToString(", ") { it.lexeme }}) $body"
     }
 
-    class Return(val keyword: Token, val value: Expr) : Stmt() {
+    class Return(val keyword: Token, val value: Expr?) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitReturnStmt(this)
 

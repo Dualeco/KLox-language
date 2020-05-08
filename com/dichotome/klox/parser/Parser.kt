@@ -165,7 +165,18 @@ class Parser(
 
     private fun expressionStatement(): Stmt = Stmt.Expression(expression())
 
+    private fun returnStatement(): Stmt {
+        val keyword = previous()
+        val value = when {
+            check(listOf(NEW_LINE, EOF)) -> null
+            else -> expression()
+        }
+
+        return Stmt.Return(keyword, value)
+    }
+
     private fun statement(): Stmt = when {
+        match(RETURN) -> returnStatement()
         match(CONTINUE) -> Stmt.Continue(previous())
         match(BREAK) -> Stmt.Break(previous())
         match(FOR) -> forStatement()
@@ -301,8 +312,8 @@ class Parser(
         val arguments = arrayListOf<Expr>()
         if (!check(RIGHT_PAREN)) {
             when(val expr = comma()) {
-                is Expr.Literal -> arguments += expr
                 is Expr.Comma -> arguments.addAll(expr.list)
+                else -> arguments += expr
             }
         }
         val paren = consume(RIGHT_PAREN, "Expect ')' after arguments.")
@@ -410,7 +421,7 @@ class Parser(
         while (!isAtEnd()) {
             if (previous().type === SEMICOLON) return
             when (peek().type) {
-                CLASS, FUN, VAR, FOR, IF, WHILE, PRINT, RETURN -> return
+                CLASS, FUN, VAR, FOR, IF, WHILE, RETURN -> return
                 else -> advance()
             }
         }
