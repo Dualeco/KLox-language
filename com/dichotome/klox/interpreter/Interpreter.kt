@@ -123,12 +123,12 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         with(logical) {
             val left = left.evaluate()
             if (operator.type == OR) {
-                if (left.isTruthy()) return left
+                if (left.isTruthy()) return true
             } else {
-                if (left.isNotTruthy()) return left
+                if (left.isNotTruthy()) return false
             }
 
-            return right.evaluate()
+            return right.evaluate().isTruthy()
         }
     }
 
