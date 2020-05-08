@@ -13,7 +13,9 @@ sealed class Stmt {
         fun visitBlockStmt(stmt: Block): R
         fun visitIfStmt(stmt: If): R
         fun visitWhileStmt(stmt: While): R
+        fun visitForStmt(stmt: For): R
         fun visitBreakStmt(stmt: Break): R
+        fun visitContinueStmt(stmt: Continue): R
         fun visitFunctionStmt(stmt: Function): R
         fun visitReturnStmt(stmt: Return): R
         fun visitAssignStmt(assignment: Assign): R
@@ -48,7 +50,17 @@ sealed class Stmt {
         override fun toString(): String = "Var Stmt (${assignment?.let { assignment } ?: name.lexeme})"
     }
 
-    class Block(val statements: List<Stmt>) : Stmt() {
+    class Block: Stmt {
+        val statements: List<Stmt>
+
+        constructor(statements: List<Stmt>): super() {
+            this.statements = statements
+        }
+
+        constructor(vararg statements: Stmt): super() {
+            this.statements = statements.asList()
+        }
+
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBlockStmt(this)
 
@@ -65,9 +77,24 @@ sealed class Stmt {
             visitor.visitWhileStmt(this)
     }
 
-    class Break : Stmt() {
+    class For(
+        val initializer: Stmt?,
+        val condition: Expr?,
+        val increment: Stmt?,
+        val body: Stmt
+    ) : Stmt() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitForStmt(this)
+    }
+
+    class Break(val breakToken: Token) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBreakStmt(this)
+    }
+
+    class Continue(val continueToken: Token) : Stmt() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitContinueStmt(this)
     }
 
     class Function(val name: Token, val function: Expr.Func) : Stmt() {

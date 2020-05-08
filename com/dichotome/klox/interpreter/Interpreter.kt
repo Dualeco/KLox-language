@@ -12,6 +12,10 @@ import kotlin.math.pow
 
 object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
+    private class BreakError(token: Token) : RuntimeError(token, "Break statement outside a loop")
+    private class ContinueError(token: Token) : RuntimeError(token, "Continue statement outside a loop")
+
+
     private var environment = Environment()
 
     fun interpret(statements: List<Stmt>) =
@@ -59,7 +63,9 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     //region EXPR ------------------------------------------------------------------------------------------------------
 
-    override fun visitNoneExpr() = Unit
+    override fun visitNoneExpr(): Any {
+        return Unit
+    }
 
     override fun visitLiteralExpr(literal: Expr.Literal): Any = literal.value ?: Unit
 
@@ -186,11 +192,42 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitWhileStmt(stmt: Stmt.While) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        with(stmt) {
+            while (condition.evaluate().isTruthy()) {
+                try {
+                    body.execute()
+                } catch (e: BreakError) {
+                    break
+                } catch (e: ContinueError) {
+                    continue
+                }
+            }
+        }
+    }
+
+    override fun visitForStmt(stmt: Stmt.For) {
+        with(stmt) {
+            initializer?.execute()
+            while (condition?.evaluate()?.isTruthy() != false) {
+                try {
+                    body.execute()
+                } catch (e: BreakError) {
+                    break
+                } catch (e: ContinueError) {
+                    increment?.execute()
+                    continue
+                }
+                increment?.execute()
+            }
+        }
     }
 
     override fun visitBreakStmt(stmt: Stmt.Break) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw BreakError(stmt.breakToken)
+    }
+
+    override fun visitContinueStmt(stmt: Stmt.Continue) {
+        throw ContinueError(stmt.continueToken)
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {

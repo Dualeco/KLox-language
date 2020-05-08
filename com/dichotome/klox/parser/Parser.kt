@@ -87,6 +87,43 @@ class Parser(
         return statement()
     }
 
+    private fun whileStatement(): Stmt {
+        consume(LEFT_PAREN, "Expect '(' after 'while'")
+        val condition = expression()
+        consume(RIGHT_PAREN, "Expect ')' after 'while'")
+        val body = statement()
+
+        return Stmt.While(condition, body)
+    }
+
+    private fun forStatement(): Stmt {
+        consume(LEFT_PAREN, "Expect '(' after 'for'")
+
+        var initializer = when {
+            match(SEMICOLON) -> null
+            match(VAR) -> varStatement()
+            else -> expressionStatement()
+        }
+        consume(SEMICOLON, "Expect ';' after 'for' condition")
+
+
+        var condition: Expr? = null
+        if (!check(SEMICOLON)) {
+            condition = expression()
+        }
+        consume(SEMICOLON, "Expect ';' after 'for' loop condition")
+
+        var increment: Stmt? = null
+        if (!check(RIGHT_PAREN)) {
+            increment = assignment()
+        }
+        consume(RIGHT_PAREN, "Expect ')' after 'for'")
+
+        val body = statement()
+
+        return Stmt.For(initializer, condition, increment, body)
+    }
+
     private fun ifStatement(): Stmt {
         consume(LEFT_PAREN, "Expect '(' after 'if'")
         val condition = expression()
@@ -103,9 +140,13 @@ class Parser(
     private fun expressionStatement(): Stmt = Stmt.Expression(expression())
 
     private fun statement(): Stmt = when {
+        match(CONTINUE) -> Stmt.Continue(previous())
+        match(BREAK) -> Stmt.Break(previous())
+        match(FOR) -> forStatement()
+        match(WHILE) -> whileStatement()
         match(IF) -> ifStatement()
-        match(PRINT) -> print()
         match(LEFT_BRACE) -> block()
+        match(PRINT) -> print()
         else -> expressionStatement()
     }
 

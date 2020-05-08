@@ -23,7 +23,9 @@ internal class Scanner(
         "this" to THIS,
         "true" to TRUE,
         "var" to VAR,
-        "while" to WHILE
+        "while" to WHILE,
+        "break" to BREAK,
+        "continue" to CONTINUE
     )
 
     private val tokens: MutableList<Token> = arrayListOf()
