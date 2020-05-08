@@ -245,7 +245,6 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) = with(stmt) {
-        val functionExpr = Expr.Function(params, body, name.lexeme)
         environment.define(name.lexeme, functionExpr.evaluate() as LoxFunction)
     }
 

@@ -33,6 +33,7 @@ internal class Scanner(
     private var line = 1
 
     private val isAtEnd get() = current >= source.length
+    private val isAtStart get() = current != 0
     private val isBeforeEndOfMultilineComment get() = peek() == '*' && peekNext() == '/'
     private val isBeforeStartOfMultilineComment get() = peek() == '/' && peekNext() == '*'
 
@@ -67,7 +68,12 @@ internal class Scanner(
         '/' -> if (peekNext() == '=') SLASH_EQUAL else SLASH
         '*' -> if (peekNext() == '=') STAR_EQUAL else STAR
         '+' -> if (peekNext() == '+') PLUS_PLUS else if (peekNext() == '=') PLUS_EQUAL else PLUS
-        '-' -> if (peekNext() == '-') MINUS_MINUS else if (peekNext() == '=') MINUS_EQUAL else MINUS
+        '-' -> when(peekNext()) {
+            '>' -> ARROW
+            '-' -> MINUS_MINUS
+            '=' -> MINUS_EQUAL
+            else -> MINUS
+        }
         '!' -> if (peekNext() == '=') BANG_EQUAL else BANG
         '=' -> if (peekNext() == '=') EQUAL_EQUAL else EQUAL
         '<' -> if (peekNext() == '=') LESS_EQUAL else LESS
@@ -75,8 +81,12 @@ internal class Scanner(
         else -> null
     }?.let {
         when (it) {
-            HAT_EQUAL, MOD_EQUAL, SLASH_EQUAL, STAR_EQUAL, PLUS_PLUS, PLUS_EQUAL, MINUS_MINUS, MINUS_EQUAL, BANG_EQUAL, EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL -> advanceTwice()
+            HAT_EQUAL, MOD_EQUAL, SLASH_EQUAL, STAR_EQUAL, PLUS_PLUS, PLUS_EQUAL, MINUS_MINUS, MINUS_EQUAL, BANG_EQUAL,
+            EQUAL_EQUAL, LESS_EQUAL, GREATER_EQUAL, ARROW -> advanceTwice()
+
             HAT, MOD, SLASH, PLUS, MINUS, BANG, STAR, EQUAL, LESS, GREATER -> advance()
+
+            else -> throw Exception("Unhandled symbol $it")
         }
         addToken(it)
     }
@@ -183,7 +193,10 @@ internal class Scanner(
 
     private fun peek() = if (!isAtEnd) source[current] else '\u0000'
 
+    private fun prev() = if (!isAtStart) source[current - 1] else '\u0000'
+
     private fun peekNext() = if (current + 1 < source.length) source[current + 1] else '\u0000'
+
 
     private fun addToken(type: TokenType) = addToken(type, null)
 

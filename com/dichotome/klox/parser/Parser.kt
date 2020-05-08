@@ -43,9 +43,9 @@ class Parser(
     }
 
     private fun declaration(): Stmt? = try {
-        when {
-            match(FUN) -> funDeclaration(FUNCTION)
-            match(VAR) -> varDeclaration()
+        when (peek().type) {
+            FUN -> funDeclaration(FUNCTION)
+            VAR -> varDeclaration()
             else -> assignment()
         }.also {
             match(NEW_LINE)
@@ -56,32 +56,20 @@ class Parser(
     }
 
     private fun funDeclaration(kind: FunctionKind): Stmt {
-        val name = consume(IDENTIFIER, "Expect ${kind.name} name")
+        if (next().type == IDENTIFIER) {
+            match(FUN)
+            match(IDENTIFIER)
+            val name = previous()
+            val functionExpr = finishFunction(kind, name.lexeme)
 
-        consume(LEFT_PAREN, "Expect '(' after ${kind.name} name")
-
-        val parameters = arrayListOf<Token>()
-
-        if (!check(RIGHT_PAREN)) {
-            do {
-                if (parameters.size >= 255) {
-                    error(peek(), "Cannot have more than 255 parameters.");
-                } else {
-                    parameters += consume(IDENTIFIER, "Expect parameter name.")
-                }
-            } while (match(COMMA))
+            return Stmt.Function(name, functionExpr)
         }
 
-        consume(RIGHT_PAREN, "Expect ')' after parameters")
-
-        consume(LEFT_BRACE, "Expect '{' before ${kind.name} body")
-
-        val body = block()
-
-        return Stmt.Function(name, parameters, body)
+        return Stmt.Expression(functionExpression())
     }
 
     private fun varDeclaration(): Stmt {
+        match(VAR)
         if (peek().type != IDENTIFIER) {
             return statement()
         }
@@ -293,7 +281,45 @@ class Parser(
             val right = unary()
             return Expr.Unary(operator, right)
         }
+        return functionExpression()
+    }
+
+    private fun functionExpression(): Expr {
+        if (match(FUN)) {
+            return finishFunction(FUNCTION)
+        }
         return call()
+    }
+
+    private fun finishFunction(kind: FunctionKind, name: String = "anonymous"): Expr.Function {
+        consume(LEFT_PAREN, "Expect '(' after ${kind.name} declaration")
+
+        val parameters = arrayListOf<Token>()
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (parameters.size >= 255) {
+                    error(peek(), "Cannot have more than 255 parameters.");
+                } else {
+                    parameters += consume(IDENTIFIER, "Expect parameter name.")
+                }
+            } while (match(COMMA))
+        }
+
+        consume(RIGHT_PAREN, "Expect ')' after parameters")
+
+        return when {
+            match(ARROW) -> {
+                val returned = Stmt.Return(previous(), expression())
+                Expr.Function(
+                    parameters, Stmt.Block(listOf(returned)), name
+                )
+            }
+            else -> {
+                consume(LEFT_BRACE, "Expect '{' before ${kind.name} body")
+                Expr.Function(parameters, block(), name)
+            }
+        }
     }
 
     private fun call(): Expr {
@@ -311,7 +337,7 @@ class Parser(
     private fun finishCall(callee: Expr): Expr {
         val arguments = arrayListOf<Expr>()
         if (!check(RIGHT_PAREN)) {
-            when(val expr = comma()) {
+            when (val expr = comma()) {
                 is Expr.Comma -> arguments.addAll(expr.list)
                 else -> arguments += expr
             }

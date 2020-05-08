@@ -1,7 +1,5 @@
-fun makeCounter(a) {
-    println(a)
-    var a = 1
-    print(a)
-}
+var a = fun(a, b) -> print(b(a))
 
-makeCounter(2)
+fun fff(a) -> a ^ 2
+
+a(2, fff)

@@ -83,12 +83,13 @@ sealed class Stmt {
             visitor.visitContinueStmt(this)
     }
 
-    class Function(val name: Token, val params: List<Token>, val body: Block) : Stmt() {
+    class Function(val name: Token, val functionExpr: Expr.Function) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFunctionStmt(this)
 
-        override fun toString(): String =
-            "Function ${name.lexeme}(${params.joinToString(", ") { it.lexeme }}) $body"
+        override fun toString(): String = with(functionExpr) {
+            "Function ${name}(${params.joinToString(", ") { it.lexeme }}) $body"
+        }
     }
 
     class Return(val keyword: Token, val value: Expr?) : Stmt() {

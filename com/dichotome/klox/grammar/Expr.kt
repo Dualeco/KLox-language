@@ -93,8 +93,11 @@ sealed class Expr {
             "$callee(${arguments.joinToString(", ")})"
     }
 
-    class Function(val params: List<Token>, val body: Stmt.Block, val name: String = "anonymous") : Expr() {
+    class Function(val params: List<Token>, val body: Stmt.Block, val name: String) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFuncExpr(this)
+
+        override fun toString(): String =
+            "Fun (${params.joinToString(", ") { it.lexeme }} $body)"
     }
 }

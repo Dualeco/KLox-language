@@ -75,12 +75,12 @@ object Lox {
         // Scan tokens
         //println("\nScanning: ---------------------------------------------------------------------------------------\n")
         val tokens: List<Token> = Scanner(source).scanTokens()
-        //tokens.forEach { println(it) }
+        tokens.forEach { println(it) }
 
         // Parse tokens
         //println("\nParsing: ----------------------------------------------------------------------------------------\n")
         val statements: List<Stmt> = Parser(tokens).parse()
-        //statements.forEach { println(it) }
+        statements.forEach { println(it) }
 
         // Stop if there was a syntax error.
         if (hadError) return
