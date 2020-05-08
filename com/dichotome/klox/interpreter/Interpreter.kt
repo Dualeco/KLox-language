@@ -7,6 +7,7 @@ import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.callable.LoxCallable
 import com.dichotome.klox.interpreter.callable.LoxFunction
+import com.dichotome.klox.interpreter.native.Native
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType.*
 import java.util.*
@@ -19,6 +20,10 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     val globals = Environment()
     private var environment = globals
+
+    init {
+        Native.defineAll(this)
+    }
 
     fun interpret(statements: List<Stmt>) =
         try {
