@@ -162,9 +162,8 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return callee.call(this@Interpreter, arguments)
     }
 
-    override fun visitFuncExpr(func: Expr.Fun): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun visitFuncExpr(func: Expr.Function): Any =
+        LoxFunction(func, environment)
 
     //endregion
 
@@ -245,9 +244,9 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         throw ContinueError(stmt.continueToken)
     }
 
-    override fun visitFunctionStmt(stmt: Stmt.Function) {
-        val function = LoxFunction(stmt, environment)
-        environment.define(stmt.name.lexeme, function)
+    override fun visitFunctionStmt(stmt: Stmt.Function) = with(stmt) {
+        val functionExpr = Expr.Function(params, body, name.lexeme)
+        environment.define(name.lexeme, functionExpr.evaluate() as LoxFunction)
     }
 
     override fun visitReturnStmt(stmt: Stmt.Return) = with(stmt) {
