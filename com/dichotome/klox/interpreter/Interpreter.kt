@@ -8,6 +8,7 @@ import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.callable.LoxCallable
 import com.dichotome.klox.interpreter.callable.LoxFunction
 import com.dichotome.klox.interpreter.native.Native
+import com.dichotome.klox.interpreter.native.stringify
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType.*
 import java.util.*
@@ -294,10 +295,10 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         if (left is Double && right is Double)
             return left + right
 
-        if (left is String && right is String)
-            return left + right
+        if ((left is Double || left is String) && (right is Double || right is String))
+            return "${left.stringify()}${right.stringify()}"
 
-        throw RuntimeError(token, "Operands must be two Numbers or Strings")
+        throw RuntimeError(token, "Operands must be Numbers or Strings")
     }
 
     private fun minus(left: Any, right: Any, token: Token): Any {
