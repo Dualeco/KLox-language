@@ -1,9 +1,1 @@
-fun lambda(a, b) {
-    print a - b
-}
-
-fun function(a, b, lambda) {
-    lambda(a, b)
-}
-
-function(7, 9, lambda)
+print123("a")

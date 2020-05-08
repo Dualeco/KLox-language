@@ -8,6 +8,8 @@ object Native {
 
     init {
         clock()
+        print()
+        println()
     }
 
     fun defineAll(interpreter: Interpreter) {
@@ -34,5 +36,13 @@ object Native {
 
     private fun clock() = createLoxCallable("clock", 0) { _, _ ->
         System.currentTimeMillis() / 1_000
+    }
+
+    private fun print() = createLoxCallable("print", 1) { _, args ->
+        print(args.first())
+    }
+
+    private fun println() = createLoxCallable("println", 1) { _, args ->
+        println(args.first())
     }
 }
