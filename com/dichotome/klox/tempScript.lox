@@ -2,4 +2,6 @@ var a = fun(a, b) -> print(b(a))
 
 fun fff(a) -> a ^ 2
 
-a(2, fff)
+a(2, fun(a) {
+    return a ^ 2
+})
