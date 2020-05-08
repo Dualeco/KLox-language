@@ -32,13 +32,6 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
             Lox.runtimeError(e)
         }
 
-    private fun stringify(value: Any): String =
-        when (value) {
-            Unit -> "nil"
-            is Double -> "$value".removeSuffix(".0")
-            else -> "$value"
-        }
-
     private fun Expr.evaluate(): Any = accept(this@Interpreter)
 
     private fun Stmt.execute(): Any = accept(this@Interpreter)
@@ -178,11 +171,6 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         stmt.expression.evaluate()
-    }
-
-    override fun visitPrintStmt(stmt: Stmt.Print) {
-        val value = stmt.expression.evaluate()
-        println(stringify(value))
     }
 
     override fun visitVarStmt(stmt: Stmt.Var) = with(stmt) {

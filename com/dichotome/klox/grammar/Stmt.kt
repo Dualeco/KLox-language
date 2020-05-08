@@ -8,7 +8,6 @@ sealed class Stmt {
 
     interface Visitor<R> {
         fun visitExpressionStmt(stmt: Expression): R
-        fun visitPrintStmt(stmt: Print): R
         fun visitVarStmt(stmt: Var): R
         fun visitBlockStmt(stmt: Block): R
         fun visitIfStmt(stmt: If): R
@@ -25,7 +24,7 @@ sealed class Stmt {
         override fun <R> accept(visitor: Visitor<R>): R =
             throw error("Visited non statement.")
 
-        override fun toString(): String = "None Stmt"
+        override fun toString(): String = ""
     }
 
     class Expression(val expression: Expr) : Stmt() {
@@ -34,13 +33,6 @@ sealed class Stmt {
 
 
         override fun toString(): String = "Expression Stmt $expression"
-    }
-
-    class Print(val expression: Expr) : Stmt() {
-        override fun <R> accept(visitor: Visitor<R>): R =
-            visitor.visitPrintStmt(this)
-
-        override fun toString(): String = "Print Stmt ($expression)"
     }
 
     class Var(val name: Token, val assignment: Assign?) : Stmt() {
@@ -85,6 +77,9 @@ sealed class Stmt {
     ) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitForStmt(this)
+
+        override fun toString(): String =
+            "For ($initializer; $condition; $increment) $body"
     }
 
     class Break(val breakToken: Token) : Stmt() {
@@ -100,11 +95,17 @@ sealed class Stmt {
     class Function(val name: Token, val params: List<Token>, val body: Block) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFunctionStmt(this)
+
+        override fun toString(): String =
+            "Function ${name.lexeme}(${params.joinToString(", ") { it.lexeme }}) $body"
     }
 
     class Return(val keyword: Token, val value: Expr) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitReturnStmt(this)
+
+        override fun toString(): String =
+            "Return " + value?.let { it }
     }
 
     class Assign(val name: Token, val value: Stmt?) : Stmt() {

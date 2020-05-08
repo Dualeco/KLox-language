@@ -163,8 +163,6 @@ class Parser(
         return Stmt.If(condition, thenBranch, elseBranch)
     }
 
-    private fun print(): Stmt = Stmt.Print(expression())
-
     private fun expressionStatement(): Stmt = Stmt.Expression(expression())
 
     private fun statement(): Stmt = when {
@@ -174,7 +172,6 @@ class Parser(
         match(WHILE) -> whileStatement()
         match(IF) -> ifStatement()
         match(LEFT_BRACE) -> block()
-        match(PRINT) -> print()
         else -> expressionStatement()
     }
 

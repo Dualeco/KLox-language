@@ -27,7 +27,8 @@ object Native {
 
         override val arity: Int = arity
 
-        override fun call(interpreter: Interpreter, arguments: List<Any>): Any = call
+        override fun call(interpreter: Interpreter, arguments: List<Any>): Any =
+            call(interpreter, arguments)
 
         override fun toString(): String = "<native $name>"
     }.also {
@@ -39,10 +40,10 @@ object Native {
     }
 
     private fun print() = createLoxCallable("print", 1) { _, args ->
-        print(args.first())
+        print(args.first().stringify())
     }
 
     private fun println() = createLoxCallable("println", 1) { _, args ->
-        println(args.first())
+        println(args.first().stringify())
     }
 }
