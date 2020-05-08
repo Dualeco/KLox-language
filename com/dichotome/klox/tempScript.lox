@@ -1,10 +1,9 @@
-var a = 0
-var b = 1
-
-for (var i = 0; i < 7; i = i + 1) {
-    print i
-    if (i >= 2) {
-        break
-    }
-    print "-"
+fun lambda(a, b) {
+    print a - b
 }
+
+fun function(a, b, lambda) {
+    lambda(a, b)
+}
+
+function(7, 9, lambda)

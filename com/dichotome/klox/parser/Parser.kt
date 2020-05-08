@@ -3,6 +3,7 @@ package com.dichotome.klox.parser
 import com.dichotome.klox.Lox
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
+import com.dichotome.klox.parser.FunctionKind.FUNCTION
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
 import com.dichotome.klox.scanner.TokenType.*
@@ -29,7 +30,7 @@ class Parser(
         }
     }
 
-    private fun block(): Stmt {
+    private fun block(): Stmt.Block {
         val statements = arrayListOf<Stmt>()
 
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
@@ -43,6 +44,7 @@ class Parser(
 
     private fun declaration(): Stmt? = try {
         when {
+            match(FUN) -> funDeclaration(FUNCTION)
             match(VAR) -> varDeclaration()
             else -> assignment()
         }.also {
@@ -51,6 +53,32 @@ class Parser(
     } catch (e: ParseError) {
         synchronize()
         null
+    }
+
+    private fun funDeclaration(kind: FunctionKind): Stmt {
+        val name = consume(IDENTIFIER, "Expect ${kind.name} name")
+
+        consume(LEFT_PAREN, "Expect '(' after ${kind.name} name")
+
+        val parameters = arrayListOf<Token>()
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (parameters.size >= 255) {
+                    error(peek(), "Cannot have more than 255 parameters.");
+                } else {
+                    parameters += consume(IDENTIFIER, "Expect parameter name.")
+                }
+            } while (match(COMMA))
+        }
+
+        consume(RIGHT_PAREN, "Expect ')' after parameters")
+
+        consume(LEFT_BRACE, "Expect '{' before ${kind.name} body")
+
+        val body = block()
+
+        return Stmt.Function(name, parameters, body)
     }
 
     private fun varDeclaration(): Stmt {
@@ -99,7 +127,7 @@ class Parser(
     private fun forStatement(): Stmt {
         consume(LEFT_PAREN, "Expect '(' after 'for'")
 
-        var initializer = when {
+        val initializer = when {
             match(SEMICOLON) -> null
             match(VAR) -> varDeclaration()
             else -> expressionStatement()
@@ -107,15 +135,15 @@ class Parser(
         consume(SEMICOLON, "Expect ';' after 'for' condition")
 
 
-        var condition: Expr? = null
-        if (!check(SEMICOLON)) {
-            condition = expression()
+        val condition = when {
+            !check(SEMICOLON) -> expression()
+            else -> null
         }
         consume(SEMICOLON, "Expect ';' after 'for' loop condition")
 
-        var increment: Stmt? = null
-        if (!check(RIGHT_PAREN)) {
-            increment = assignment()
+        val increment: Stmt? = when {
+            !check(RIGHT_PAREN) -> assignment()
+            else -> null
         }
         consume(RIGHT_PAREN, "Expect ')' after 'for'")
 
@@ -257,7 +285,32 @@ class Parser(
             val right = unary()
             return Expr.Unary(operator, right)
         }
-        return primary()
+        return call()
+    }
+
+    private fun call(): Expr {
+        var expr = primary()
+        while (true) {
+            if (match(LEFT_PAREN)) {
+                expr = finishCall(expr)
+            } else {
+                break
+            }
+        }
+        return expr
+    }
+
+    private fun finishCall(callee: Expr): Expr {
+        val arguments = arrayListOf<Expr>()
+        if (!check(RIGHT_PAREN)) {
+            when(val expr = comma()) {
+                is Expr.Literal -> arguments += expr
+                is Expr.Comma -> arguments.addAll(expr.list)
+            }
+        }
+        val paren = consume(RIGHT_PAREN, "Expect ')' after arguments.")
+
+        return Expr.Call(callee, paren, arguments)
     }
 
     private fun primary(): Expr =
