@@ -1,8 +1,13 @@
-fun fibonacci(n) {
-  if (n <= 1) return n
-  return fibonacci(n - 2) + fibonacci(n - 1)
+fun makeCounter() {
+    var i = 0
+
+    fun count() {
+        i = i + 1
+        return i
+    }
+
+    return count
 }
 
-for (var i = 0; i < 10; i = i + 1) {
-  print(fibonacci(i) + ", ")
-}
+var counter = makeCounter()
+print(counter())

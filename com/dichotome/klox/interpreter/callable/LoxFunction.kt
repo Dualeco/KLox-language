@@ -5,14 +5,17 @@ import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
 import com.dichotome.klox.interpreter.error.ReturnError
 
-class LoxFunction(private val declaration: Stmt.Function) : LoxCallable {
+class LoxFunction(
+    private val declaration: Stmt.Function,
+    private val closure: Environment
+) : LoxCallable {
 
     override val name: String = declaration.name.lexeme
 
     override val arity: Int = declaration.params.size
 
     override fun call(interpreter: Interpreter, arguments: List<Any>): Any = with(declaration) {
-        Environment(interpreter.globals).let { environment ->
+        Environment(closure).let { environment ->
             params.forEachIndexed { i, token ->
                 environment.define(token.lexeme, arguments[i])
             }
