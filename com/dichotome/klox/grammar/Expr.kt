@@ -23,6 +23,7 @@ sealed class Expr {
         fun visitCallExpr(call: Call): R
         fun visitFuncExpr(func: Function): R
         fun visitGetExpr(get: Get): R
+        fun visitThisExpr(thiz: This): R
     }
 
     class None : Expr() {
@@ -108,5 +109,10 @@ sealed class Expr {
 
         override fun toString(): String =
             "$obj.$name"
+    }
+
+    class This(val keyword: Token): Expr() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitThisExpr(this)
     }
 }

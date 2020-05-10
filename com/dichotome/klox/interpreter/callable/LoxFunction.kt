@@ -3,6 +3,7 @@ package com.dichotome.klox.interpreter.callable
 import com.dichotome.klox.environment.Environment
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.interpreter.Interpreter
+import com.dichotome.klox.interpreter.callable.klass.LoxInstance
 import com.dichotome.klox.interpreter.error.ReturnError
 
 class LoxFunction(
@@ -28,6 +29,13 @@ class LoxFunction(
 
         return Unit
     }
+
+    fun bind(instance: LoxInstance): LoxFunction =
+        Environment(closure).let { environment ->
+            environment.define("this", instance)
+
+            LoxFunction(expression, environment)
+        }
 
     override fun toString(): String = "<fn $name >"
 }

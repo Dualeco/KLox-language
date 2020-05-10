@@ -179,11 +179,16 @@ class Resolver(
             declare(name)
             define(name)
 
+            beginScope()
+            scopes.peek()["this"] = USED
+
             methods.forEach {
                 val declaration = LoxFunctionType.METHOD
 
                 resolveFunction(it, declaration)
             }
+
+            endScope()
         }
     }
 
@@ -261,6 +266,10 @@ class Resolver(
 
     override fun visitGetExpr(get: Expr.Get) {
         resolve(get.obj)
+    }
+
+    override fun visitThisExpr(thiz: Expr.This) {
+        resolveLocal(thiz, thiz.keyword)
     }
 
     //endregion

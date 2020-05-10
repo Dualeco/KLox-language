@@ -1,6 +1,10 @@
 var msg = "DFGHJKMGYUKM"
 class Bacon {
-  fun eat() -> print(msg)
+  fun eat() -> print(this)
+}
+
+class NonBacon {
+  fun eat() -> Bacon().eat()
 }
 
 Bacon().eat()

@@ -190,6 +190,10 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
+    override fun visitThisExpr(thiz: Expr.This): Any =
+        lookUpVariable(thiz.keyword, thiz)
+
+
     //endregion
 
     //region STMT ------------------------------------------------------------------------------------------------------
