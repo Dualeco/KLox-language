@@ -1,9 +1,11 @@
 package com.dichotome.klox.parser
 
 import com.dichotome.klox.Lox
+import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.parser.LoxFunctionType.FUNCTION
+import com.dichotome.klox.parser.LoxFunctionType.METHOD
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
 import com.dichotome.klox.scanner.TokenType.*
@@ -44,6 +46,7 @@ class Parser(
 
     private fun declaration(): Stmt? = try {
         when (peek().type) {
+            CLASS -> classDeclaration()
             FUN -> funDeclaration(FUNCTION)
             VAR -> varDeclaration()
             else -> assignment()
@@ -55,12 +58,42 @@ class Parser(
         null
     }
 
+    private fun classDeclaration(): Stmt {
+        match(CLASS)
+        val name = consume(IDENTIFIER, "Expect class name.")
+        consume(LEFT_BRACE, "Expect '{' before class body.")
+
+        val methods = arrayListOf<Stmt.Function>()
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            val stmt = funDeclaration(METHOD)
+
+            // if fun is lambda
+            if (stmt is Stmt.Expression) {
+                val expr = stmt.expression
+                if (expr is Expr.Function) {
+                    throw RuntimeError(
+                        expr.keyword, "Only named functions are allowed in classes"
+                    )
+                } else if (expr is Expr.None) {
+                    continue
+                }
+            } else {
+                methods += stmt as Stmt.Function
+            }
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after class body.")
+
+        return Stmt.Class(name, methods)
+    }
+
     private fun funDeclaration(kind: LoxFunctionType): Stmt {
         if (next().type == IDENTIFIER) {
-            match(FUN)
+            val keyword = consume(FUN, "")
             match(IDENTIFIER)
             val name = previous()
-            val functionExpr = finishFunction(kind, name.lexeme)
+            val functionExpr = finishFunction(keyword, kind, name.lexeme)
 
             return Stmt.Function(name, functionExpr)
         }
@@ -75,7 +108,7 @@ class Parser(
         }
 
         if (next().type != EQUAL) {
-            return Stmt.Var(consume(IDENTIFIER, ""), null)
+            return Stmt.Var(peek(), null)
         }
 
         val assignment = assignment()
@@ -88,19 +121,26 @@ class Parser(
     }
 
     private fun assignment(): Stmt {
-        if (peek().type == IDENTIFIER && next().type == EQUAL) {
-            val target = consume(IDENTIFIER, "")
-            consume(EQUAL, "")
-            return Stmt.Assign(
-                target,
-                if (peek().type == IDENTIFIER && next().type == EQUAL) {
-                    assignment()
-                } else {
-                    Stmt.Expression(expression())
+        val stmt = statement()
+        if (match(EQUAL)) {
+            val expr = (stmt as Stmt.Expression).expression
+            when (expr) {
+                is Expr.Variable -> {
+                    return Stmt.Assign(
+                        expr.name,
+                        assignment()
+                    )
                 }
-            )
+                is Expr.Get -> {
+                    return Stmt.Set(
+                        expr.obj,
+                        expr.name,
+                        assignment()
+                    )
+                }
+            }
         }
-        return statement()
+        return stmt
     }
 
     private fun whileStatement(): Stmt {
@@ -217,7 +257,6 @@ class Parser(
         while (match(OR)) {
             val operator = previous()
             val right = and()
-            expr = Expr.Logical(expr, operator, right)
         }
 
         return expr
@@ -285,13 +324,14 @@ class Parser(
     }
 
     private fun functionExpression(): Expr {
-        if (match(FUN)) {
-            return finishFunction(FUNCTION)
+        if (peek().type == FUN) {
+            val keyword = consume(FUN, "")
+            return finishFunction(keyword, FUNCTION)
         }
         return call()
     }
 
-    private fun finishFunction(kind: LoxFunctionType, name: String = "anonymous"): Expr.Function {
+    private fun finishFunction(token: Token, kind: LoxFunctionType, name: String = "anonymous"): Expr.Function {
         consume(LEFT_PAREN, "Expect '(' after ${kind.name} declaration")
 
         val parameters = arrayListOf<Token>()
@@ -312,23 +352,27 @@ class Parser(
             match(ARROW) -> {
                 val returned = Stmt.Return(previous(), expression())
                 Expr.Function(
-                    parameters, Stmt.Block(listOf(returned)), name
+                    token, parameters, Stmt.Block(listOf(returned)), name
                 )
             }
             else -> {
                 consume(LEFT_BRACE, "Expect '{' before ${kind.name} body")
-                Expr.Function(parameters, block(), name)
+                Expr.Function(token, parameters, block(), name)
             }
         }
     }
 
     private fun call(): Expr {
         var expr = primary()
-        while (true) {
-            if (match(LEFT_PAREN)) {
-                expr = finishCall(expr)
-            } else {
-                break
+        var shouldRun = true
+        while (shouldRun) {
+            when {
+                match(LEFT_PAREN) -> expr = finishCall(expr)
+                match(DOT) -> {
+                    val name = consume(IDENTIFIER, "Expect property name after `.` .")
+                    expr = Expr.Get(expr, name)
+                }
+                else -> shouldRun = false
             }
         }
         return expr

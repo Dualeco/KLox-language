@@ -7,6 +7,8 @@ import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.callable.LoxCallable
 import com.dichotome.klox.interpreter.callable.LoxFunction
+import com.dichotome.klox.interpreter.callable.klass.LoxClass
+import com.dichotome.klox.interpreter.callable.klass.LoxInstance
 import com.dichotome.klox.interpreter.error.BreakError
 import com.dichotome.klox.interpreter.error.ContinueError
 import com.dichotome.klox.interpreter.error.ReturnError
@@ -176,6 +178,18 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     override fun visitFuncExpr(func: Expr.Function): Any =
         LoxFunction(func, environment)
 
+    override fun visitGetExpr(get: Expr.Get): Any {
+        with(get) {
+            obj.evaluate().let { target ->
+                if (target is LoxInstance) {
+                    return target[name]
+                } else {
+                    throw RuntimeError(name, "Only instances of classes have properties")
+                }
+            }
+        }
+    }
+
     //endregion
 
     //region STMT ------------------------------------------------------------------------------------------------------
@@ -190,18 +204,43 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitAssignStmt(assignment: Stmt.Assign) {
-        var stmt: Stmt? = assignment
-        val names = LinkedList<Token>()
+        chainAssign(assignment)
+    }
 
-        while (stmt is Stmt.Assign) {
-            names.addFirst(stmt.name)
-            stmt = stmt.value
+    override fun visitSetStmt(set: Stmt.Set) {
+        chainAssign(set)
+    }
+
+    private fun chainAssign(assignment: Stmt) {
+        var stmt = assignment
+        val names = LinkedList<Any>()
+
+        while (stmt is Stmt.Assign || stmt is Stmt.Set) {
+            when (stmt) {
+                is Stmt.Assign -> {
+                    names.addFirst(stmt.name)
+                    stmt = stmt.value
+                }
+                is Stmt.Set -> {
+                    val instance = stmt.obj.evaluate() as? LoxInstance ?: throw RuntimeError(
+                        stmt.name,
+                        "Only instances of classes have fields."
+                    )
+                    names.addFirst(instance to stmt.name)
+                    stmt = stmt.value
+                }
+            }
         }
 
-        if (stmt is Stmt.Expression?) {
-            val value = stmt?.expression?.evaluate() ?: Unit
+        if (stmt is Stmt.Expression) {
+            val value = stmt.expression.evaluate() ?: Unit
             names.forEach {
-                environment[it] = value
+                when(it) {
+                    is Token -> environment[it] = value
+                    is Pair<*, *> -> (it as Pair<LoxInstance, Token>).let { (instance, token) ->
+                        instance[token] = value
+                    }
+                }
             }
         }
     }
@@ -257,12 +296,31 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {
         with(stmt) {
-            environment.define(name.lexeme, functionExpr.evaluate() as LoxFunction)
+            with(environment) {
+                define(name.lexeme, Unit)
+                val func = functionExpr.evaluate() as LoxFunction
+                set(name, func)
+            }
         }
     }
 
     override fun visitReturnStmt(stmt: Stmt.Return) = with(stmt) {
         throw ReturnError(keyword, value?.evaluate() ?: Unit)
+    }
+
+    override fun visitClassStmt(clazz: Stmt.Class) {
+        with(clazz) {
+            environment.define(name.lexeme)
+
+            val methods = clazz.methods.associateBy(
+                { it.name.lexeme },
+                { LoxFunction(it.functionExpr, environment) }
+            ) as HashMap<String, LoxFunction>
+
+            val klass = LoxClass(clazz.name.lexeme, methods)
+
+            environment[name] = klass
+        }
     }
 
     //endregion

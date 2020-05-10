@@ -26,11 +26,14 @@ class Resolver(
         val currentScope = scopes.peek()
         val variables = arrayListOf<Token>()
         val functions = arrayListOf<Token>()
+        val classes = arrayListOf<Token>()
         stmt.statements.forEach {
             when (it) {
                 is Stmt.Var -> variables += it.name
                 is Stmt.Function -> functions += it.name
-                else -> {}
+                is Stmt.Class -> classes += it.name
+                else -> {
+                }
             }
         }
 
@@ -39,12 +42,17 @@ class Resolver(
 
         variables.forEach {
             if (currentScope[it.lexeme] != USED) {
-                Lox.error(it, "Variable is never used")
+                Lox.error(it, "Variable `${it.lexeme}` is never used")
             }
         }
         functions.forEach {
             if (currentScope[it.lexeme] != USED) {
-                Lox.error(it, "Function is never used")
+                Lox.error(it, "Function `${it.lexeme}` is never used")
+            }
+        }
+        classes.forEach {
+            if (currentScope[it.lexeme] != USED) {
+                Lox.error(it, "Class `${it.lexeme}` is never used")
             }
         }
     }
@@ -65,12 +73,29 @@ class Resolver(
         resolveFunction(stmt, LoxFunctionType.FUNCTION)
     }
 
+    override fun visitSetStmt(set: Stmt.Set) {
+        assignChain(set)
+    }
+
     override fun visitAssignStmt(assignment: Stmt.Assign) {
+        assignChain(assignment)
+    }
+
+    private fun assignChain(assignment: Stmt) {
         var stmt: Stmt = assignment
         val tokens = arrayListOf<Token>()
-        while (stmt is Stmt.Assign) {
-            tokens += stmt.name
-            stmt = stmt.value
+        val setStmts = arrayListOf<Stmt.Set>()
+        while (stmt is Stmt.Assign || stmt is Stmt.Set) {
+            when (stmt) {
+                is Stmt.Assign -> {
+                    tokens += stmt.name
+                    stmt = stmt.value
+                }
+                is Stmt.Set -> {
+                    setStmts += stmt
+                    stmt = stmt.value
+                }
+            }
         }
 
         val expr = (stmt as Stmt.Expression).expression
@@ -80,8 +105,11 @@ class Resolver(
         tokens.forEach {
             resolveLocal(expr, it)
         }
-    }
 
+        setStmts.forEach {
+            resolve(it.obj)
+        }
+    }
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         resolve(stmt.expression)
@@ -146,16 +174,31 @@ class Resolver(
         }
     }
 
+    override fun visitClassStmt(clazz: Stmt.Class) {
+        with(clazz) {
+            declare(name)
+            define(name)
+
+            methods.forEach {
+                val declaration = LoxFunctionType.METHOD
+
+                resolveFunction(it, declaration)
+            }
+        }
+    }
+
     //endregion
 
     //region EXPR ------------------------------------------------------------------------------------------------------
 
     override fun visitVariableExpr(variable: Expr.Variable) = with(variable) {
-        val isShadowing = scopes.peek()[name.lexeme] == DECLARED
-        if (scopes.isNotEmpty() && isShadowing) {
-            resolveLocal(variable, name, isShadowing)
-        } else {
-            resolveLocal(variable, name)
+        if (scopes.isNotEmpty()) {
+            val isShadowing = scopes.peek()[name.lexeme] == DECLARED
+            if (isShadowing) {
+                resolveLocal(variable, name, true)
+            } else {
+                resolveLocal(variable, name)
+            }
         }
     }
 
@@ -214,6 +257,10 @@ class Resolver(
                 resolve(it)
             }
         }
+    }
+
+    override fun visitGetExpr(get: Expr.Get) {
+        resolve(get.obj)
     }
 
     //endregion

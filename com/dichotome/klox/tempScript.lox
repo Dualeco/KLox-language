@@ -1,4 +1,6 @@
-{
-    var a = 1
-    fun a() -> nil
+var msg = "DFGHJKMGYUKM"
+class Bacon {
+  fun eat() -> print(msg)
 }
+
+Bacon().eat()

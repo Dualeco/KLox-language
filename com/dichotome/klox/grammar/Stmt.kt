@@ -18,6 +18,8 @@ sealed class Stmt {
         fun visitFunctionStmt(stmt: Function): R
         fun visitReturnStmt(stmt: Return): R
         fun visitAssignStmt(assignment: Assign): R
+        fun visitClassStmt(clazz: Class): R
+        fun visitSetStmt(set: Set): R
     }
 
     class None : Stmt() {
@@ -109,10 +111,28 @@ sealed class Stmt {
                 return "${name.lexeme}, ${value.value}"
             }
 
-            if (value is Expression?) {
+            if (value is Expression) {
                 return "${name.lexeme} = ${value.expression}"
             }
             return "${name.lexeme} = $value"
         }
+    }
+
+    class Class(val name: Token, val methods: List<Function>): Stmt() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitClassStmt(this)
+
+        override fun toString(): String =
+            "class ${name.lexeme} {\n" +
+                    methods.joinToString { "  $it\n" } +
+                    "}"
+    }
+
+    class Set(val obj: Expr, val name: Token, val value: Stmt): Stmt() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitSetStmt(this)
+
+        override fun toString(): String =
+            "$obj.$name = $value"
     }
 }

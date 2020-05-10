@@ -22,6 +22,7 @@ sealed class Expr {
         fun visitLogicalExpr(logical: Logical): R
         fun visitCallExpr(call: Call): R
         fun visitFuncExpr(func: Function): R
+        fun visitGetExpr(get: Get): R
     }
 
     class None : Expr() {
@@ -93,11 +94,19 @@ sealed class Expr {
             "$callee(${arguments.joinToString(", ")})"
     }
 
-    class Function(val params: List<Token>, val body: Stmt.Block, val name: String) : Expr() {
+    class Function(val keyword: Token, val params: List<Token>, val body: Stmt.Block, val name: String) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFuncExpr(this)
 
         override fun toString(): String =
             "Fun (${params.joinToString(", ") { it.lexeme }} $body)"
+    }
+
+    class Get(val obj: Expr, val name: Token): Expr() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitGetExpr(this)
+
+        override fun toString(): String =
+            "$obj.$name"
     }
 }
