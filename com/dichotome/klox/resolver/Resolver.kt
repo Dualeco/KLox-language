@@ -22,16 +22,17 @@ class Resolver(
 
 
     override fun visitVarStmt(stmt: Stmt.Var) = with(stmt) {
-        declare(name)
+        declare(name.lexeme)
         assignment?.let {
             resolve(it)
         }
-        define(name)
+        define(name.lexeme)
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {
-        declare(stmt.name)
-        define(stmt.name)
+        val name = stmt.name.lexeme
+        declare(name)
+        define(name)
 
         resolveFunction(stmt)
     }
@@ -49,7 +50,7 @@ class Resolver(
         resolve(expr)
 
         tokens.forEach {
-            resolveLocal(expr, it)
+            resolveLocal(expr, it.lexeme)
         }
     }
 
@@ -109,7 +110,8 @@ class Resolver(
     //region EXPR ------------------------------------------------------------------------------------------------------
 
     override fun visitVariableExpr(variable: Expr.Variable) = with(variable) {
-        if (scopes.isNotEmpty() && scopes.peek()[name.lexeme] == false) {
+        val name = name.lexeme
+        if (scopes.isNotEmpty() && scopes.peek()[name] == false) {
             resolveLocal(variable, name, true)
         } else {
             resolveLocal(variable, name)
@@ -198,28 +200,28 @@ class Resolver(
         scopes.pop()
     }
 
-    private fun declare(token: Token) {
+    private fun declare(name: String) {
         if (scopes.isEmpty()) {
             return
         }
-        scopes.peek()[token.lexeme] = false
+        scopes.peek()[name] = false
     }
 
-    private fun define(token: Token) {
+    private fun define(name: String) {
         if (scopes.isEmpty()) {
             return
         }
-        scopes.peek()[token.lexeme] = true
+        scopes.peek()[name] = true
     }
 
-    private fun resolveLocal(expr: Expr, name: Token, isShadowing: Boolean = false) {
+    private fun resolveLocal(expr: Expr, name: String, isShadowing: Boolean = false) {
         val reversed = scopes.asReversed().toMutableList()
 
         if (isShadowing) {
             reversed.removeAt(0)
         }
         reversed.forEachIndexed { i, it ->
-            if (it.containsKey(name.lexeme)) {
+            if (it.containsKey(name)) {
                 interpreter.resolve(expr, i)
                 return
             }
@@ -234,8 +236,8 @@ class Resolver(
 
     private fun resolveLambda(func: Expr.Function) {
         func.params.forEach {
-            declare(it)
-            define(it)
+            declare(it.lexeme)
+            define(it.lexeme)
         }
         resolve(func.body)
     }

@@ -45,12 +45,6 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return distance?.let { environment[distance, token] } ?: globals[token]
     }
 
-    private fun lookUpCallable(name: String, expr: Expr, arity: Int): LoxCallable {
-        val distance = locals[expr]
-
-        return distance?.let { environment[distance, name, arity] } ?: globals[0, name, arity]
-    }
-
     private fun Expr.evaluate(): Any = accept(this@Interpreter)
 
     private fun Stmt.execute(): Unit = accept(this@Interpreter)
@@ -168,13 +162,15 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
         val callee = callee.evaluate()
 
-        val name = callee as? String ?: throw RuntimeError(
+        val callable = callee as? LoxCallable ?: throw RuntimeError(
             paren, "Only functions and classes are callable"
         )
 
-        val overload = lookUpCallable(name, call.callee, arguments.size)
+        if (callable.arity != arguments.size) {
+            throw RuntimeError(call.paren, "Expected ${callable.arity} arguments but got ${arguments.size}")
+        }
 
-        return overload.call(this@Interpreter, arguments)
+        return callable.call(this@Interpreter, arguments)
     }
 
     override fun visitFuncExpr(func: Expr.Function): Any =
@@ -261,11 +257,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {
         with(stmt) {
-            val func = functionExpr.evaluate() as LoxFunction
-            environment.apply {
-                define(name.lexeme, name.lexeme)
-                overload(name.lexeme, func.arity, func)
-            }
+            environment.define(name.lexeme, functionExpr.evaluate() as LoxFunction)
         }
     }
 
