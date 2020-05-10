@@ -100,7 +100,7 @@ sealed class Stmt {
             "Return " + value?.let { it }
     }
 
-    class Assign(val name: Token, val value: Stmt?) : Stmt() {
+    class Assign(val name: Token, val value: Stmt) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitAssignStmt(this)
 
@@ -110,7 +110,7 @@ sealed class Stmt {
             }
 
             if (value is Expression?) {
-                return "${name.lexeme} = ${value?.expression}"
+                return "${name.lexeme} = ${value.expression}"
             }
             return "${name.lexeme} = $value"
         }

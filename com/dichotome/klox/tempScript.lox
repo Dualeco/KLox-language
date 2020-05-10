@@ -1,7 +1,10 @@
-var a = fun(a, b) -> print(b(a))
+var a = 200
+fun showA() -> println("Outer " + a)
+fun showA(a) -> println("Inner " + a)
+fun showA(a, b) -> 123
 
-fun fff(a) -> a ^ 2
-
-a(2, fun(a) {
-    return a ^ 2
-})
+{
+    showA()
+    showA(1)
+    print(showA(1, 2))
+}

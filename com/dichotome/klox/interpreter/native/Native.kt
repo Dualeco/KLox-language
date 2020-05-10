@@ -14,7 +14,10 @@ object Native {
 
     fun defineAll(interpreter: Interpreter) {
         functions.forEach {
-            interpreter.globals.define(it.name, it)
+            interpreter.globals.apply {
+                define(it.name, it.name)
+                overload(it.name, it.arity, it)
+            }
         }
     }
 

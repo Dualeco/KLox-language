@@ -4,6 +4,7 @@ import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
 import com.dichotome.klox.parser.Parser
+import com.dichotome.klox.resolver.Resolver
 import com.dichotome.klox.scanner.Scanner
 import com.dichotome.klox.scanner.Token
 import java.io.BufferedReader
@@ -71,7 +72,6 @@ object Lox {
     }
 
     private fun scan(source: String) {
-
         // Scan tokens
         //println("\nScanning: ---------------------------------------------------------------------------------------\n")
         val tokens: List<Token> = Scanner(source).scanTokens()
@@ -84,6 +84,9 @@ object Lox {
 
         // Stop if there was a syntax error.
         if (hadError) return
+
+        // Semantic analysis
+        Resolver(Interpreter).resolve(statements)
 
         // Parse tokens
         //println("\nInterpret: --------------------------------------------------------------------------------------\n")

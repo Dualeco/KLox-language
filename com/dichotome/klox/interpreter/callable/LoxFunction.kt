@@ -20,7 +20,7 @@ class LoxFunction(
                 environment.define(token.lexeme, arguments[i])
             }
             try {
-                interpreter.executeBlock(body, environment)
+                interpreter.executeBlock(body, Environment(environment))
             } catch (returnError: ReturnError) {
                 return@with returnError.value
             }
