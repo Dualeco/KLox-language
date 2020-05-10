@@ -1,5 +1,6 @@
 package com.dichotome.klox.parser
 
-enum class FunctionKind {
+enum class LoxFunctionType {
+    NONE,
     FUNCTION
 }

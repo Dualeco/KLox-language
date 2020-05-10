@@ -1,7 +1,4 @@
-var a = 200
-fun showA() -> println("Outer " + a)
 {
-    fun showAB(a, b) -> 0
-    showA()
-    print(showA(1, 2))
+    var a = 1
+    fun a() -> nil
 }

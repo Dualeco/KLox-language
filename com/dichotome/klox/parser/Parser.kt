@@ -3,7 +3,7 @@ package com.dichotome.klox.parser
 import com.dichotome.klox.Lox
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
-import com.dichotome.klox.parser.FunctionKind.FUNCTION
+import com.dichotome.klox.parser.LoxFunctionType.FUNCTION
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
 import com.dichotome.klox.scanner.TokenType.*
@@ -55,7 +55,7 @@ class Parser(
         null
     }
 
-    private fun funDeclaration(kind: FunctionKind): Stmt {
+    private fun funDeclaration(kind: LoxFunctionType): Stmt {
         if (next().type == IDENTIFIER) {
             match(FUN)
             match(IDENTIFIER)
@@ -291,7 +291,7 @@ class Parser(
         return call()
     }
 
-    private fun finishFunction(kind: FunctionKind, name: String = "anonymous"): Expr.Function {
+    private fun finishFunction(kind: LoxFunctionType, name: String = "anonymous"): Expr.Function {
         consume(LEFT_PAREN, "Expect '(' after ${kind.name} declaration")
 
         val parameters = arrayListOf<Token>()

@@ -73,12 +73,12 @@ sealed class Stmt {
             "For ($initializer; $condition; $increment) $body"
     }
 
-    class Break(val breakToken: Token) : Stmt() {
+    class Break(val keyword: Token) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitBreakStmt(this)
     }
 
-    class Continue(val continueToken: Token) : Stmt() {
+    class Continue(val keyword: Token) : Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitContinueStmt(this)
     }

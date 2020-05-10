@@ -1,40 +1,68 @@
 package com.dichotome.klox.resolver
 
+import com.dichotome.klox.Lox
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
+import com.dichotome.klox.parser.LoxFunctionType
+import com.dichotome.klox.resolver.DeclarationState.*
 import com.dichotome.klox.scanner.Token
 import java.util.*
+
 
 class Resolver(
     val interpreter: Interpreter
 ) : Stmt.Visitor<Unit>, Expr.Visitor<Unit> {
 
-    private val scopes = Stack<HashMap<String, Boolean>>()
+    private val scopes = Stack<HashMap<String, DeclarationState>>()
+    private var currentFunction = LoxFunctionType.NONE
+    private var isInsideLoopBody = false
 
     //region STMT ------------------------------------------------------------------------------------------------------
 
     override fun visitBlockStmt(stmt: Stmt.Block) {
         beginScope()
+
+        val currentScope = scopes.peek()
+        val variables = arrayListOf<Token>()
+        val functions = arrayListOf<Token>()
+        stmt.statements.forEach {
+            when (it) {
+                is Stmt.Var -> variables += it.name
+                is Stmt.Function -> functions += it.name
+                else -> {}
+            }
+        }
+
         resolve(stmt.statements)
         endScope()
+
+        variables.forEach {
+            if (currentScope[it.lexeme] != USED) {
+                Lox.error(it, "Variable is never used")
+            }
+        }
+        functions.forEach {
+            if (currentScope[it.lexeme] != USED) {
+                Lox.error(it, "Function is never used")
+            }
+        }
     }
 
 
     override fun visitVarStmt(stmt: Stmt.Var) = with(stmt) {
-        declare(name.lexeme)
+        declare(name)
         assignment?.let {
             resolve(it)
         }
-        define(name.lexeme)
+        define(name)
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {
-        val name = stmt.name.lexeme
-        declare(name)
-        define(name)
+        declare(stmt.name)
+        define(stmt.name)
 
-        resolveFunction(stmt)
+        resolveFunction(stmt, LoxFunctionType.FUNCTION)
     }
 
     override fun visitAssignStmt(assignment: Stmt.Assign) {
@@ -50,7 +78,7 @@ class Resolver(
         resolve(expr)
 
         tokens.forEach {
-            resolveLocal(expr, it.lexeme)
+            resolveLocal(expr, it)
         }
     }
 
@@ -70,13 +98,16 @@ class Resolver(
     }
 
     override fun visitWhileStmt(stmt: Stmt.While) {
+        isInsideLoopBody = true
         with(stmt) {
             resolve(condition)
             resolve(body)
         }
+        isInsideLoopBody = false
     }
 
     override fun visitForStmt(stmt: Stmt.For) {
+        isInsideLoopBody = true
         with(stmt) {
             initializer?.let {
                 resolve(it)
@@ -89,17 +120,27 @@ class Resolver(
             }
             resolve(body)
         }
+        isInsideLoopBody = false
     }
 
     override fun visitBreakStmt(stmt: Stmt.Break) {
-        return
+        if (!isInsideLoopBody) {
+            Lox.error(stmt.keyword, "Unresolved break statement")
+        }
+        isInsideLoopBody = false
     }
 
     override fun visitContinueStmt(stmt: Stmt.Continue) {
-        return
+        if (!isInsideLoopBody) {
+            Lox.error(stmt.keyword, "Unresolved continue statement")
+        }
+        isInsideLoopBody = false
     }
 
     override fun visitReturnStmt(stmt: Stmt.Return) {
+        if (currentFunction == LoxFunctionType.NONE) {
+            Lox.error(stmt.keyword, "Unresolved return statement");
+        }
         stmt.value?.let {
             resolve(it)
         }
@@ -110,9 +151,9 @@ class Resolver(
     //region EXPR ------------------------------------------------------------------------------------------------------
 
     override fun visitVariableExpr(variable: Expr.Variable) = with(variable) {
-        val name = name.lexeme
-        if (scopes.isNotEmpty() && scopes.peek()[name] == false) {
-            resolveLocal(variable, name, true)
+        val isShadowing = scopes.peek()[name.lexeme] == DECLARED
+        if (scopes.isNotEmpty() && isShadowing) {
+            resolveLocal(variable, name, isShadowing)
         } else {
             resolveLocal(variable, name)
         }
@@ -200,44 +241,56 @@ class Resolver(
         scopes.pop()
     }
 
-    private fun declare(name: String) {
+    private fun declare(token: Token) {
         if (scopes.isEmpty()) {
             return
         }
-        scopes.peek()[name] = false
+        scopes.peek().let { currentScope ->
+            if (currentScope.containsKey(token.lexeme)) {
+                Lox.error(token, "This name is already used by another declaration in this scope.")
+            }
+            currentScope[token.lexeme] = DECLARED
+        }
+
     }
 
-    private fun define(name: String) {
+    private fun define(token: Token) {
         if (scopes.isEmpty()) {
             return
         }
-        scopes.peek()[name] = true
+        scopes.peek()[token.lexeme] = DEFINED
     }
 
-    private fun resolveLocal(expr: Expr, name: String, isShadowing: Boolean = false) {
+    private fun resolveLocal(expr: Expr, name: Token, isShadowing: Boolean = false) {
         val reversed = scopes.asReversed().toMutableList()
 
         if (isShadowing) {
             reversed.removeAt(0)
         }
         reversed.forEachIndexed { i, it ->
-            if (it.containsKey(name)) {
+            if (it.containsKey(name.lexeme)) {
                 interpreter.resolve(expr, i)
+                it[name.lexeme] = USED
                 return
             }
         }
     }
 
-    private fun resolveFunction(func: Stmt.Function) {
+    private fun resolveFunction(func: Stmt.Function, type: LoxFunctionType) {
+        val enclosingFunction = currentFunction
+        currentFunction = type
+
         beginScope()
         resolveLambda(func.functionExpr)
         endScope()
+
+        currentFunction = enclosingFunction
     }
 
     private fun resolveLambda(func: Expr.Function) {
         func.params.forEach {
-            declare(it.lexeme)
-            define(it.lexeme)
+            declare(it)
+            define(it)
         }
         resolve(func.body)
     }

@@ -248,11 +248,11 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitBreakStmt(stmt: Stmt.Break) {
-        throw BreakError(stmt.breakToken)
+        throw BreakError(stmt.keyword)
     }
 
     override fun visitContinueStmt(stmt: Stmt.Continue) {
-        throw ContinueError(stmt.continueToken)
+        throw ContinueError(stmt.keyword)
     }
 
     override fun visitFunctionStmt(stmt: Stmt.Function) {

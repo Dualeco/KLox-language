@@ -40,13 +40,15 @@ object Lox {
 
     fun error(line: Int, message: String) = report(line, "", message)
 
+    fun error(token: Token, message: String) = report(token.line, token.lexeme, message)
+
     fun runtimeError(error: RuntimeError) {
         System.err.println("${error.message} \n[line " + error.token.line + "]")
         hadRuntimeError = true
     }
 
     fun report(line: Int, where: String, message: String) {
-        System.err.println("[line $line] Error$where: $message")
+        System.err.println("[line $line] Error at `$where`: $message")
         hadError = true
     }
 
@@ -87,6 +89,9 @@ object Lox {
 
         // Semantic analysis
         Resolver(Interpreter).resolve(statements)
+
+        // Stop if there was a resolution error.
+        if (hadError) return;
 
         // Parse tokens
         //println("\nInterpret: --------------------------------------------------------------------------------------\n")
