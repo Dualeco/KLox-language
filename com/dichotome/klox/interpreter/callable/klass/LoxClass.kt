@@ -9,10 +9,16 @@ class LoxClass(
     private val methods: HashMap<String, LoxFunction>
 ): LoxCallable {
 
-    override val arity: Int = 0
+    override val arity: Int = findMethod("init")?.arity ?: 0
 
-    override fun call(interpreter: Interpreter, arguments: List<Any>): Any =
-        LoxInstance(this)
+    override fun call(interpreter: Interpreter, arguments: List<Any>): Any {
+        val instance = LoxInstance(this)
+        findMethod("init")?.apply {
+            bind(instance).call(interpreter, arguments)
+        }
+        return instance
+    }
+
 
     override fun toString() = "<cls $name>"
 

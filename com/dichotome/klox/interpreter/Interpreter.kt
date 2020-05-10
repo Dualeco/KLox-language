@@ -44,7 +44,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     private fun lookUpVariable(token: Token, expr: Expr): Any {
         val distance = locals[expr]
 
-        return distance?.let { environment[distance, token] } ?: globals[token]
+        return distance?.let { environment[distance, token.lexeme] } ?: globals[token]
     }
 
     private fun Expr.evaluate(): Any = accept(this@Interpreter)
@@ -176,7 +176,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visitFuncExpr(func: Expr.Function): Any =
-        LoxFunction(func, environment)
+        LoxFunction(func, environment, false)
 
     override fun visitGetExpr(get: Expr.Get): Any {
         with(get) {
@@ -318,7 +318,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
             val methods = clazz.methods.associateBy(
                 { it.name.lexeme },
-                { LoxFunction(it.functionExpr, environment) }
+                { LoxFunction(it.functionExpr, environment, it.name.lexeme == "init") }
             ) as HashMap<String, LoxFunction>
 
             val klass = LoxClass(clazz.name.lexeme, methods)

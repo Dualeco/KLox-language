@@ -74,7 +74,7 @@ class Parser(
                 val expr = stmt.expression
                 if (expr is Expr.Function) {
                     throw RuntimeError(
-                        expr.keyword, "Only named functions are allowed in classes"
+                        expr.paren, "Only named functions are allowed in classes"
                     )
                 } else if (expr is Expr.None) {
                     continue
@@ -90,11 +90,13 @@ class Parser(
     }
 
     private fun funDeclaration(kind: LoxFunctionType): Stmt {
-        if (next().type == IDENTIFIER) {
-            val keyword = consume(FUN, "")
-            match(IDENTIFIER)
-            val name = previous()
-            val functionExpr = finishFunction(keyword, kind, name.lexeme)
+        if (kind == FUNCTION) {
+            match(FUN)
+        }
+
+        if (peek().type == IDENTIFIER) {
+            val name = consume(IDENTIFIER, "")
+            val functionExpr = finishFunction(kind, name.lexeme)
 
             return Stmt.Function(name, functionExpr)
         }
@@ -326,13 +328,13 @@ class Parser(
 
     private fun functionExpression(): Expr {
         if (peek().type == FUN) {
-            val keyword = consume(FUN, "")
-            return finishFunction(keyword, FUNCTION)
+            match(FUN)
+            return finishFunction(FUNCTION)
         }
         return call()
     }
 
-    private fun finishFunction(token: Token, kind: LoxFunctionType, name: String = "anonymous"): Expr.Function {
+    private fun finishFunction(kind: LoxFunctionType, name: String = "anonymous"): Expr.Function {
         consume(LEFT_PAREN, "Expect '(' after ${kind.name} declaration")
 
         val parameters = arrayListOf<Token>()
@@ -347,18 +349,18 @@ class Parser(
             } while (match(COMMA))
         }
 
-        consume(RIGHT_PAREN, "Expect ')' after parameters")
+        val paren = consume(RIGHT_PAREN, "Expect ')' after parameters")
 
         return when {
             match(ARROW) -> {
                 val returned = Stmt.Return(previous(), expression())
                 Expr.Function(
-                    token, parameters, Stmt.Block(listOf(returned)), name
+                    paren, parameters, Stmt.Block(listOf(returned)), name
                 )
             }
             else -> {
                 consume(LEFT_BRACE, "Expect '{' before ${kind.name} body")
-                Expr.Function(token, parameters, block(), name)
+                Expr.Function(paren, parameters, block(), name)
             }
         }
     }

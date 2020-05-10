@@ -1,10 +1,14 @@
 var msg = "DFGHJKMGYUKM"
 class Bacon {
-  fun eat() -> print(this)
+  eat() {
+    while(true) {
+        print(true)
+    }
+  }
 }
 
 class NonBacon {
-  fun eat() -> Bacon().eat()
+  eat() -> Bacon().eat()
 }
 
 Bacon().eat()

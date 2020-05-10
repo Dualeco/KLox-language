@@ -13,8 +13,8 @@ class Environment(private val enclosing: Environment? = null) {
 
     operator fun get(token: Token) = getToken(token)
 
-    operator fun get(distance: Int, token: Token) =
-        ancestor(distance).variables[token.lexeme]
+    operator fun get(distance: Int, name: String) =
+        ancestor(distance).variables[name]
 
     operator fun set(token: Token, value: Any) = assign(token, value)
 

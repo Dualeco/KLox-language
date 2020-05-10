@@ -166,11 +166,10 @@ class Resolver(
     }
 
     override fun visitReturnStmt(stmt: Stmt.Return) {
-        if (currentFunction == LoxFunctionType.NONE) {
-            Lox.error(stmt.keyword, "Unresolved return statement");
-        }
-        stmt.value?.let {
-            resolve(it)
+        when(currentFunction) {
+            LoxFunctionType.NONE -> Lox.error(stmt.keyword, "Unresolved return statement");
+            LoxFunctionType.INITIALIZER -> Lox.error(stmt.keyword,  "Cannot return a value from an initializer.");
+            else -> stmt.value?.let { resolve(it) }
         }
     }
 
@@ -185,7 +184,10 @@ class Resolver(
             scopes.peek()["this"] = USED
 
             methods.forEach {
-                val declaration = LoxFunctionType.METHOD
+                val declaration = if (it.name.lexeme == "init")
+                    LoxFunctionType.INITIALIZER
+                else
+                    LoxFunctionType.METHOD
 
                 resolveFunction(it, declaration)
             }

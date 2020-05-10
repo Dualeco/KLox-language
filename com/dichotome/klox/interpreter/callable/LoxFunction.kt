@@ -8,7 +8,8 @@ import com.dichotome.klox.interpreter.error.ReturnError
 
 class LoxFunction(
     private val expression: Expr.Function,
-    private val closure: Environment
+    private val closure: Environment,
+    private val isInitializer: Boolean
 ) : LoxCallable {
 
     override val name: String = expression.name
@@ -23,8 +24,15 @@ class LoxFunction(
             try {
                 interpreter.executeBlock(body, Environment(environment))
             } catch (returnError: ReturnError) {
-                return@with returnError.value
+                return@with if (isInitializer) {
+                    environment[0, "this"]!!
+                } else {
+                    returnError.value
+                }
             }
+
+            if (isInitializer)
+                return closure[0, "this"]!!
         }
 
         return Unit
@@ -34,7 +42,7 @@ class LoxFunction(
         Environment(closure).let { environment ->
             environment.define("this", instance)
 
-            LoxFunction(expression, environment)
+            LoxFunction(expression, environment, isInitializer)
         }
 
     override fun toString(): String = "<fn $name >"
