@@ -4,8 +4,9 @@ import com.dichotome.klox.Lox
 import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
-import com.dichotome.klox.parser.LoxFunctionType.FUNCTION
-import com.dichotome.klox.parser.LoxFunctionType.METHOD
+import com.dichotome.klox.resolver.LoxFunctionType
+import com.dichotome.klox.resolver.LoxFunctionType.FUNCTION
+import com.dichotome.klox.resolver.LoxFunctionType.METHOD
 import com.dichotome.klox.scanner.Token
 import com.dichotome.klox.scanner.TokenType
 import com.dichotome.klox.scanner.TokenType.*

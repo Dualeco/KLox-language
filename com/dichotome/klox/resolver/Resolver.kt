@@ -4,7 +4,6 @@ import com.dichotome.klox.Lox
 import com.dichotome.klox.grammar.Expr
 import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
-import com.dichotome.klox.parser.LoxFunctionType
 import com.dichotome.klox.resolver.DeclarationState.*
 import com.dichotome.klox.scanner.Token
 import java.util.*
@@ -16,6 +15,7 @@ class Resolver(
 
     private val scopes = Stack<HashMap<String, DeclarationState>>()
     private var currentFunction = LoxFunctionType.NONE
+    private var currentClass = LoxClassType.NONE
     private var isInsideLoopBody = false
 
     //region STMT ------------------------------------------------------------------------------------------------------
@@ -175,6 +175,8 @@ class Resolver(
     }
 
     override fun visitClassStmt(clazz: Stmt.Class) {
+        val enclosingClass = currentClass
+        currentClass = LoxClassType.CLASS
         with(clazz) {
             declare(name)
             define(name)
@@ -190,6 +192,7 @@ class Resolver(
 
             endScope()
         }
+        currentClass = enclosingClass
     }
 
     //endregion
@@ -269,6 +272,9 @@ class Resolver(
     }
 
     override fun visitThisExpr(thiz: Expr.This) {
+        if (currentClass == LoxClassType.NONE) {
+            Lox.error(thiz.keyword, "Unresolved this statement")
+        }
         resolveLocal(thiz, thiz.keyword)
     }
 

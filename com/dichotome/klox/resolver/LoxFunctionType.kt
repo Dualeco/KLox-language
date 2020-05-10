@@ -1,4 +1,4 @@
-package com.dichotome.klox.parser
+package com.dichotome.klox.resolver
 
 enum class LoxFunctionType {
     NONE,
