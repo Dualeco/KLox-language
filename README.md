@@ -1,5 +1,7 @@
 # KLox-language
 
+An version of the Lox language with enhanced syntax
+
 (Great thanks to [GraydenH](https://github.com/GraydenH) for [Expr.kt](https://github.com/DichotoMe/KLox-language/blob/master/com/dichotome/klox/grammar/Expr.kt) and [Stmt.kt](https://github.com/DichotoMe/KLox-language/blob/master/com/dichotome/klox/grammar/Stmt.kt))
 
 **Syntax in BNF:**
@@ -15,7 +17,7 @@ declaration    → classDecl
                | varDecl
                | statement ;
 
-classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
+classDecl      → "class" IDENTIFIER ( ":" IDENTIFIER )? "{" function* "}" ;
 
 funDecl        → "fun" function ;
 
@@ -29,12 +31,11 @@ varDecl        → "var" IDENTIFIER ( "=" expression )? ;
 statement      → exprStmt
                | forStmt
                | ifStmt
-               | printStmt
                | returnStmt
                | whileStmt
                | block ;
 
-exprStmt       → expression ";" ;
+exprStmt       → expression ;
 
 forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
                            expression? ";"
@@ -42,9 +43,7 @@ forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
 
 ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 
-printStmt      → "print" expression ";" ;
-
-returnStmt     → "return" expression? ";" ;
+returnStmt     → "return" expression? ;
 
 whileStmt      → "while" "(" expression ")" statement ;
 
@@ -57,9 +56,9 @@ block          → "{" declaration* "}" ;
 
 expression     → assignment ;
 
-assignment     → ( call "." )? IDENTIFIER "=" assignment
+assignment     → ( ( call "." )? IDENTIFIER "=" )* assignment
                | logic_or;
-
+               
 logic_or       → logic_and ( "or" logic_and )* ;
 
 logic_and      → equality ( "and" equality )* ;
@@ -70,13 +69,17 @@ comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 
 addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
 
-multiplication → unary ( ( "/" | "*" ) unary )* ;
+multiplication → power ( ( "/" | "*" ) power )* ;
+
+power → mod ( "^" mod )* ;
+
+mod → unary ( "%" unary )* ;
 
 unary          → ( "!" | "-" ) unary | call ;
 
 call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 
-primary        → "true" | "false" | "nil" | "this"
+primary        → "true" | "false" | "nil" | "this" | "break | "continue"
                | NUMBER | STRING | IDENTIFIER | "(" expression ")"
                | "super" "." IDENTIFIER ;
 ```
@@ -85,7 +88,7 @@ primary        → "true" | "false" | "nil" | "this"
 ```
 4. Utility Rules
 
-function       → IDENTIFIER "(" parameters? ")" block ;
+function       → IDENTIFIER ( "(" parameters? ")" block | "->" expression ) ;
 parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
 arguments      → expression ( "," expression )* ;
 ```
