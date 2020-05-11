@@ -315,8 +315,28 @@ class Parser(
     }
 
     private fun multiplication(): Expr {
+        var expr = power()
+        while (match(SLASH, STAR)) {
+            val operator = previous()
+            val right = power()
+            expr = Expr.Binary(expr, operator, right)
+        }
+        return expr
+    }
+
+    private fun power(): Expr {
+        var expr = mod()
+        while (match(HAT)) {
+            val operator = previous()
+            val right = mod()
+            expr = Expr.Binary(expr, operator, right)
+        }
+        return expr
+    }
+
+    private fun mod(): Expr {
         var expr = unary()
-        while (match(SLASH, STAR, HAT, MOD)) {
+        while (match(MOD)) {
             val operator = previous()
             val right = unary()
             expr = Expr.Binary(expr, operator, right)

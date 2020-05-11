@@ -1,11 +1,1 @@
-var msg = "DFGHJKMGYUKM"
-
-class Food {
-  eat(a) -> print(a)
-}
-
-class Bacon: Food {
-
-}
-
-Bacon().eat("a")
+print(2 * 2 ^ 2 % 2)
