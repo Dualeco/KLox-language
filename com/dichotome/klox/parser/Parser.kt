@@ -267,6 +267,7 @@ class Parser(
         while (match(OR)) {
             val operator = previous()
             val right = and()
+            expr = Expr.Logical(expr, operator, right)
         }
 
         return expr
