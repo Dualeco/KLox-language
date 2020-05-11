@@ -1,14 +1,11 @@
 var msg = "DFGHJKMGYUKM"
-class Bacon {
-  eat() {
-    while(true) {
-        print(true)
-    }
-  }
+
+class Food {
+  eat(a) -> print(a)
 }
 
-class NonBacon {
-  eat() -> Bacon().eat()
+class Bacon: Food {
+
 }
 
-Bacon().eat()
+Bacon().eat("a")

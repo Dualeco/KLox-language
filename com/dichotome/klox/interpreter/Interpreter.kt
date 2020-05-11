@@ -194,6 +194,19 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         lookUpVariable(thiz.keyword, thiz)
 
 
+    override fun visitSuperExpr(zuper: Expr.Super): Any {
+        val distance = locals[zuper]!!
+        val superClass = environment[distance, "super"] as LoxClass
+
+        val obj = environment[distance - 1, "this"] as LoxInstance
+
+        val method = superClass.findMethod(zuper.token.lexeme) ?: throw RuntimeError(
+            zuper.token, "No method with name ${zuper.token.lexeme} found in class ${superClass.name}"
+        )
+
+        return method.bind(obj)
+    }
+
     //endregion
 
     //region STMT ------------------------------------------------------------------------------------------------------
@@ -239,7 +252,7 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         if (stmt is Stmt.Expression) {
             val value = stmt.expression.evaluate() ?: Unit
             names.forEach {
-                when(it) {
+                when (it) {
                     is Token -> environment[it] = value
                     is Pair<*, *> -> (it as Pair<LoxInstance, Token>).let { (instance, token) ->
                         instance[token] = value
@@ -314,16 +327,31 @@ object Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     override fun visitClassStmt(clazz: Stmt.Class) {
         with(clazz) {
+            var parent: LoxClass? = null
+            superClass?.let {
+                parent = superClass.evaluate() as? LoxClass ?: throw RuntimeError(
+                    it.name, "Superclass must be a class."
+                )
+            }
+
             environment.define(name.lexeme)
+
+            superClass?.let {
+                environment = Environment(environment).apply {
+                    define("super", parent!!)
+                }
+            }
 
             val methods = clazz.methods.associateBy(
                 { it.name.lexeme },
                 { LoxFunction(it.functionExpr, environment, it.name.lexeme == "init") }
             ) as HashMap<String, LoxFunction>
 
-            val klass = LoxClass(clazz.name.lexeme, methods)
+            environment[name] = LoxClass(clazz.name.lexeme, parent, methods)
 
-            environment[name] = klass
+            superClass?.let {
+                environment = environment.enclosing!!
+            }
         }
     }
 

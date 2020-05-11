@@ -24,6 +24,7 @@ sealed class Expr {
         fun visitFuncExpr(func: Function): R
         fun visitGetExpr(get: Get): R
         fun visitThisExpr(thiz: This): R
+        fun visitSuperExpr(zuper: Super): R
     }
 
     class None : Expr() {
@@ -114,5 +115,14 @@ sealed class Expr {
     class This(val keyword: Token): Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitThisExpr(this)
+
+        override fun toString(): String = keyword.lexeme
+    }
+
+    class Super(val keyword: Token, val token: Token): Expr() {
+        override fun <R> accept(visitor: Visitor<R>): R =
+            visitor.visitSuperExpr(this)
+
+        override fun toString(): String = "${keyword.lexeme}.${token.lexeme}"
     }
 }

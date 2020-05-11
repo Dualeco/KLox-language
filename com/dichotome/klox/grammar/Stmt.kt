@@ -118,12 +118,12 @@ sealed class Stmt {
         }
     }
 
-    class Class(val name: Token, val methods: List<Function>): Stmt() {
+    class Class(val name: Token, val superClass: Expr.Variable?, val methods: List<Function>): Stmt() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitClassStmt(this)
 
         override fun toString(): String =
-            "class ${name.lexeme} {\n" +
+            "class ${name.lexeme} : ${superClass?.name?.lexeme ?: ""} {\n" +
                     methods.joinToString { "  $it\n" } +
                     "}"
     }

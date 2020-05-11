@@ -180,6 +180,17 @@ class Resolver(
             declare(name)
             define(name)
 
+            if (superClass?.name?.lexeme == clazz.name.lexeme) {
+                Lox.error(superClass.name, "A class cannot inherit from itself.")
+            }
+
+            if (superClass != null) {
+                resolve(superClass)
+                beginScope()
+                scopes.peek()["super"] = USED
+                currentClass = LoxClassType.SUBCLASS
+            }
+
             beginScope()
             scopes.peek()["this"] = USED
 
@@ -190,6 +201,10 @@ class Resolver(
                     LoxFunctionType.METHOD
 
                 resolveFunction(it, declaration)
+            }
+
+            if (superClass != null) {
+                endScope()
             }
 
             endScope()
@@ -275,9 +290,19 @@ class Resolver(
 
     override fun visitThisExpr(thiz: Expr.This) {
         if (currentClass == LoxClassType.NONE) {
-            Lox.error(thiz.keyword, "Unresolved this statement")
+            Lox.error(thiz.keyword, "Used `this` statement outside a class")
         }
         resolveLocal(thiz, thiz.keyword)
+    }
+
+    override fun visitSuperExpr(zuper: Expr.Super) {
+        if (currentClass == LoxClassType.NONE) {
+            Lox.error(zuper.keyword, "Used `super` statement outside a class")
+        }
+        if (currentClass != LoxClassType.SUBCLASS) {
+            Lox.error(zuper.keyword, "Used `super` statement in a class without a superclass")
+        }
+        resolveLocal(zuper, zuper.keyword)
     }
 
     //endregion

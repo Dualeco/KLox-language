@@ -62,6 +62,13 @@ class Parser(
     private fun classDeclaration(): Stmt {
         match(CLASS)
         val name = consume(IDENTIFIER, "Expect class name.")
+
+        var superClass: Expr.Variable? = null
+        if (match(COLON)) {
+            consume(IDENTIFIER, "Expect superclass name.")
+            superClass = Expr.Variable(previous())
+        }
+
         consume(LEFT_BRACE, "Expect '{' before class body.")
 
         val methods = arrayListOf<Stmt.Function>()
@@ -86,7 +93,7 @@ class Parser(
 
         consume(RIGHT_BRACE, "Expect '}' after class body.")
 
-        return Stmt.Class(name, methods)
+        return Stmt.Class(name, superClass, methods)
     }
 
     private fun funDeclaration(kind: LoxFunctionType): Stmt {
@@ -400,6 +407,12 @@ class Parser(
             match(TRUE) -> Expr.Literal(true)
             match(NIL) -> Expr.Literal(null)
             match(NUMBER, STRING) -> Expr.Literal(previous().literal)
+            match(SUPER) -> {
+                val keyword = previous()
+                consume(DOT, "Expect '.' after 'super'.")
+                val token = consume(IDENTIFIER, "Expect superclass member name.")
+                Expr.Super(keyword, token)
+            }
             match(THIS) -> Expr.This(previous())
             match(IDENTIFIER) -> Expr.Variable(previous())
             match(LEFT_PAREN) -> {

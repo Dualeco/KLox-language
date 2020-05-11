@@ -3,7 +3,7 @@ package com.dichotome.klox.environment
 import com.dichotome.klox.error.RuntimeError
 import com.dichotome.klox.scanner.Token
 
-class Environment(private val enclosing: Environment? = null) {
+class Environment(val enclosing: Environment? = null) {
 
     private val variables: MutableMap<String, Any> = hashMapOf()
 
