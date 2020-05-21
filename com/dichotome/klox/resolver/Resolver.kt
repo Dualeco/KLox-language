@@ -228,7 +228,7 @@ class Resolver(
     }
 
     override fun visitFuncExpr(func: Expr.Function) {
-        resolveLambda(func)
+        resolveLambda(func, LoxFunctionType.FUNCTION)
     }
 
     override fun visitNoneExpr() {
@@ -366,21 +366,21 @@ class Resolver(
     }
 
     private fun resolveFunction(func: Stmt.Function, type: LoxFunctionType) {
+        beginScope()
+        resolveLambda(func.functionExpr, type)
+        endScope()
+    }
+
+    private fun resolveLambda(func: Expr.Function, type: LoxFunctionType) {
         val enclosingFunction = currentFunction
         currentFunction = type
 
-        beginScope()
-        resolveLambda(func.functionExpr)
-        endScope()
-
-        currentFunction = enclosingFunction
-    }
-
-    private fun resolveLambda(func: Expr.Function) {
         func.params.forEach {
             declare(it)
             define(it)
         }
         resolve(func.body)
+
+        currentFunction = enclosingFunction
     }
 }
