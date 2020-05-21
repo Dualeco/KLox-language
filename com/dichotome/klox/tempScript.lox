@@ -1,5 +1,3 @@
-println(2 * 2 ^ 2 % 2)
-
-var a = fun(b, c) -> b + c
+var a = fun(a, b) -> a + b
 
 println(a(1, 2))

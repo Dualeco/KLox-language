@@ -97,9 +97,7 @@ class Parser(
     }
 
     private fun funDeclaration(kind: LoxFunctionType): Stmt {
-        if (kind == FUNCTION) {
-            match(FUN)
-        }
+        match(FUN)
 
         if (peek().type == IDENTIFIER) {
             val name = consume(IDENTIFIER, "")

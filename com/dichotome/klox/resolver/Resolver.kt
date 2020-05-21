@@ -14,6 +14,7 @@ class Resolver(
 ) : Stmt.Visitor<Unit>, Expr.Visitor<Unit> {
 
     private val scopes = Stack<HashMap<String, DeclarationState>>()
+    private val currentScope: HashMap<String, DeclarationState> get() = scopes.peek()
     private var currentFunction = LoxFunctionType.NONE
     private var currentClass = LoxClassType.NONE
     private var isInsideLoopBody = false
@@ -23,7 +24,7 @@ class Resolver(
     override fun visitBlockStmt(stmt: Stmt.Block) {
         beginScope()
 
-        val currentScope = scopes.peek()
+        val currentScope = currentScope
         val variables = arrayListOf<Token>()
         val functions = arrayListOf<Token>()
         val classes = arrayListOf<Token>()
@@ -166,9 +167,9 @@ class Resolver(
     }
 
     override fun visitReturnStmt(stmt: Stmt.Return) {
-        when(currentFunction) {
-            LoxFunctionType.NONE -> Lox.error(stmt.keyword, "Unresolved return statement");
-            LoxFunctionType.INITIALIZER -> Lox.error(stmt.keyword,  "Cannot return a value from an initializer.");
+        when (currentFunction) {
+            LoxFunctionType.NONE -> Lox.error(stmt.keyword, "Unresolved return statement")
+            LoxFunctionType.INITIALIZER -> Lox.error(stmt.keyword, "Cannot return a value from an initializer.")
             else -> stmt.value?.let { resolve(it) }
         }
     }
@@ -187,20 +188,17 @@ class Resolver(
             if (superClass != null) {
                 resolve(superClass)
                 beginScope()
-                scopes.peek()["super"] = USED
+                currentScope["super"] = USED
                 currentClass = LoxClassType.SUBCLASS
             }
 
             beginScope()
-            scopes.peek()["this"] = USED
+            currentScope["this"] = USED
 
             methods.forEach {
-                val declaration = if (it.name.lexeme == "init")
-                    LoxFunctionType.INITIALIZER
-                else
-                    LoxFunctionType.METHOD
-
-                resolveFunction(it, declaration)
+                val isInitializer = it.name.lexeme == "init"
+                val funcType = if (isInitializer) LoxFunctionType.INITIALIZER else LoxFunctionType.METHOD
+                resolveFunction(it, funcType)
             }
 
             if (superClass != null) {
@@ -218,17 +216,13 @@ class Resolver(
 
     override fun visitVariableExpr(variable: Expr.Variable) = with(variable) {
         if (scopes.isNotEmpty()) {
-            val isShadowing = scopes.peek()[name.lexeme] == DECLARED
-            if (isShadowing) {
-                resolveLocal(variable, name, true)
-            } else {
-                resolveLocal(variable, name)
-            }
+            val isShadowing = currentScope[name.lexeme] == DECLARED
+            resolveLocal(variable, name, isShadowing)
         }
     }
 
     override fun visitFuncExpr(func: Expr.Function) {
-        resolveLambda(func, LoxFunctionType.FUNCTION)
+        resolveFunction(func, LoxFunctionType.FUNCTION)
     }
 
     override fun visitNoneExpr() {
@@ -334,7 +328,7 @@ class Resolver(
         if (scopes.isEmpty()) {
             return
         }
-        scopes.peek().let { currentScope ->
+        currentScope.let { currentScope ->
             if (currentScope.containsKey(token.lexeme)) {
                 Lox.error(token, "This name is already used by another declaration in this scope.")
             }
@@ -347,7 +341,7 @@ class Resolver(
         if (scopes.isEmpty()) {
             return
         }
-        scopes.peek()[token.lexeme] = DEFINED
+        currentScope[token.lexeme] = DEFINED
     }
 
     private fun resolveLocal(expr: Expr, name: Token, isShadowing: Boolean = false) {
@@ -365,22 +359,23 @@ class Resolver(
         }
     }
 
-    private fun resolveFunction(func: Stmt.Function, type: LoxFunctionType) {
-        beginScope()
-        resolveLambda(func.functionExpr, type)
-        endScope()
-    }
+    private fun resolveFunction(func: Stmt.Function, type: LoxFunctionType) =
+        resolveFunction(func.functionExpr, type)
 
-    private fun resolveLambda(func: Expr.Function, type: LoxFunctionType) {
+    private fun resolveFunction(func: Expr.Function, type: LoxFunctionType) {
+        beginScope()
         val enclosingFunction = currentFunction
         currentFunction = type
 
-        func.params.forEach {
-            declare(it)
-            define(it)
+        with(func) {
+            params.forEach {
+                declare(it)
+                define(it)
+            }
+            resolve(body)
         }
-        resolve(func.body)
 
         currentFunction = enclosingFunction
+        endScope()
     }
 }
