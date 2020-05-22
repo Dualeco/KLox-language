@@ -210,7 +210,7 @@ class Parser(
     }
 
     private fun statement(): Stmt = when {
-        match(RETURN) -> returnStatement()
+        match(RETURN, ARROW) -> returnStatement()
         match(CONTINUE) -> Stmt.Continue(previous())
         match(BREAK) -> Stmt.Break(previous())
         match(FOR) -> forStatement()
@@ -375,18 +375,7 @@ class Parser(
 
         val paren = consume(RIGHT_PAREN, "Expect ')' after parameters")
 
-        return when {
-            match(ARROW) -> {
-                val returned = Stmt.Return(previous(), expression())
-                Expr.Function(
-                    paren, parameters, Stmt.Block(listOf(returned)), name
-                )
-            }
-            else -> {
-                consume(LEFT_BRACE, "Expect '{' before ${kind.name} body")
-                Expr.Function(paren, parameters, block(), name)
-            }
-        }
+        return Expr.Function(paren, parameters, assignment(), name)
     }
 
     private fun call(): Expr {

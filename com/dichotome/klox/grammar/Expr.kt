@@ -96,7 +96,7 @@ sealed class Expr {
             "$callee(${arguments.joinToString(", ")})"
     }
 
-    class Function(val paren: Token, val params: List<Token>, val body: Stmt.Block, val name: String) : Expr() {
+    class Function(val paren: Token, val params: List<Token>, val body: Stmt, val name: String) : Expr() {
         override fun <R> accept(visitor: Visitor<R>): R =
             visitor.visitFuncExpr(this)
 

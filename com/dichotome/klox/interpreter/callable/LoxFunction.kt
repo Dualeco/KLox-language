@@ -2,6 +2,7 @@ package com.dichotome.klox.interpreter.callable
 
 import com.dichotome.klox.environment.Environment
 import com.dichotome.klox.grammar.Expr
+import com.dichotome.klox.grammar.Stmt
 import com.dichotome.klox.interpreter.Interpreter
 import com.dichotome.klox.interpreter.callable.klass.LoxInstance
 import com.dichotome.klox.interpreter.error.ReturnError
@@ -22,7 +23,13 @@ class LoxFunction(
                 environment.define(token.lexeme, arguments[i])
             }
             try {
-                interpreter.executeBlock(body, Environment(environment))
+                val block = if (body is Stmt.Block) {
+                    body
+                } else {
+                    Stmt.Block(listOf(body))
+                }
+                interpreter.executeBlock(block, Environment(environment))
+
             } catch (returnError: ReturnError) {
                 return@with if (isInitializer) {
                     environment[0, "this"]!!
