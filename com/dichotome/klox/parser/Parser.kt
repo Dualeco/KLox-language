@@ -440,6 +440,7 @@ class Parser(
                 Expr.Grouping(expr)
             }
             match(NEW_LINE) -> Expr.None()
+
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
             else -> throw error(peek(), "Expect expression. ${previous()}, ${peek()}")

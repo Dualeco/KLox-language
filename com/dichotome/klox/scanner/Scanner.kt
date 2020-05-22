@@ -49,7 +49,7 @@ internal class Scanner(
     private fun scanToken() {
         when (val char = peek()) {
             '(', ')', '{', '}', ':', ',', '.', ';', '?', ' ', '\n', '\r', '\t' -> consumeSingleCharToken(char)
-            '%', '^', '/', '*', '+', '-', '!', '=', '<', '>' -> consumeTwoCharOperators(char)
+            '%', '^', '*', '+', '-', '!', '=', '<', '>' -> consumeTwoCharOperators(char)
             '/' -> consumeSlashOrComment()
             '"' -> consumeString()?.let { addToken(STRING, it) }
             else -> {

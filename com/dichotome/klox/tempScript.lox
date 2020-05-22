@@ -1,3 +1,8 @@
-var a = fun(a, b) -> a + b
+/* class A {
+    init(a, b) {
+        this.a = a
+        this.b = b
+    }
 
-println(a(1, 2))
+    // fun print() -> println(this.a + this.b)
+} */
