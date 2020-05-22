@@ -109,7 +109,14 @@ internal class Scanner(
         '?' -> QUESTION
         '\n' -> {
             newLine()
-            NEW_LINE
+            var token: TokenType? = null
+
+            // if return statement doesn't have a value, return null
+            if (tokens.last().type == RETURN) {
+                token = NIL
+            }
+
+            token
         }
         ' ', '\r', '\t' -> null
         else -> null
@@ -134,8 +141,7 @@ internal class Scanner(
             Lox.error(line, "Unterminated multiline comment.")
             return
         } else {
-            advance()
-            advance()
+            advanceTwice()
         }
     }
 

@@ -51,8 +51,6 @@ class Parser(
             FUN -> funDeclaration(FUNCTION)
             VAR -> varDeclaration()
             else -> assignment()
-        }.also {
-            match(NEW_LINE)
         }
     } catch (e: ParseError) {
         synchronize()
@@ -155,7 +153,7 @@ class Parser(
         consume(LEFT_PAREN, "Expect '(' after 'while'")
         val condition = expression()
         consume(RIGHT_PAREN, "Expect ')' after 'while'")
-        val body = statement()
+        val body = assignment()
 
         return Stmt.While(condition, body)
     }
@@ -183,7 +181,7 @@ class Parser(
         }
         consume(RIGHT_PAREN, "Expect ')' after 'for'")
 
-        val body = statement()
+        val body = assignment()
 
         return Stmt.For(initializer, condition, increment, body)
     }
@@ -193,8 +191,8 @@ class Parser(
         val condition = expression()
         consume(RIGHT_PAREN, "Expect ')' after 'if'")
 
-        val thenBranch = statement()
-        val elseBranch = if (match(ELSE)) statement() else null
+        val thenBranch = assignment()
+        val elseBranch = if (match(ELSE)) assignment() else null
 
         return Stmt.If(condition, thenBranch, elseBranch)
     }
@@ -204,7 +202,7 @@ class Parser(
     private fun returnStatement(): Stmt {
         val keyword = previous()
         val value = when {
-            check(listOf(NEW_LINE, EOF)) -> null
+            check(listOf(NIL, EOF)) -> null
             else -> expression()
         }
 
@@ -439,8 +437,6 @@ class Parser(
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
                 Expr.Grouping(expr)
             }
-            match(NEW_LINE) -> Expr.None()
-
             checkBinaryOperator(peek()) ->
                 throw noLeftOperandError(peek())
             else -> throw error(peek(), "Expect expression. ${previous()}, ${peek()}")
@@ -474,9 +470,6 @@ class Parser(
         }
         return false
     }
-
-    private fun consumeLineEnd(): Token =
-        consume(listOf(NEW_LINE, EOF), "Expect new line after expression ${peek().lexeme}")
 
     private fun consume(type: TokenType, message: String): Token {
         if (check(type)) return advance()

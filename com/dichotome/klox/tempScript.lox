@@ -1,8 +1,3 @@
-/* class A {
-    init(a, b) {
-        this.a = a
-        this.b = b
-    }
+fun a(b) ->
 
-    // fun print() -> println(this.a + this.b)
-} */
+a(1)
