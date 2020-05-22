@@ -23,11 +23,7 @@ class LoxFunction(
                 environment.define(token.lexeme, arguments[i])
             }
             try {
-                val block = if (body is Stmt.Block) {
-                    body
-                } else {
-                    Stmt.Block(listOf(body))
-                }
+                val block = if (body is Stmt.Block) body else Stmt.Block(listOf(body))
                 interpreter.executeBlock(block, Environment(environment))
 
             } catch (returnError: ReturnError) {
